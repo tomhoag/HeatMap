@@ -73,20 +73,7 @@ public struct HeatMapLayer: MapContent {
         points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) {
-        let grid = DensityGrid.compute(from: points, configuration: configuration)
-        let result = MarchingSquares.extractContours(
-            from: grid,
-            levels: configuration.contourLevels
-        )
-        self.contours = result.polygons.map { polygon in
-            ContourPolygon(
-                level: polygon.level,
-                threshold: polygon.threshold,
-                coordinates: configuration.smoother.smooth(polygon.coordinates)
-            )
-        }
-        self.gradient = configuration.gradient
-        self.totalLevels = configuration.contourLevels
+        self.init(contours: HeatMapContours.compute(from: points, configuration: configuration))
     }
 
     /// Creates a heat map layer from pre-computed contours.
