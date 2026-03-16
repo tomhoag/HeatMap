@@ -67,4 +67,24 @@ struct HeatMapConfigurationTests {
         config.radius = 999
         #expect(config.radius == 999)
     }
+
+    @Test func radiusClampsToMinimum() {
+        let config = HeatMapConfiguration(radius: -10)
+        #expect(config.radius == 1)
+    }
+
+    @Test func contourLevelsClampsToMinimum() {
+        let config = HeatMapConfiguration(contourLevels: 0)
+        #expect(config.contourLevels == 1)
+    }
+
+    @Test func gridResolutionClampsToMinimum() {
+        let config = HeatMapConfiguration(gridResolution: 1)
+        #expect(config.gridResolution == 2)
+    }
+
+    @Test func paddingFactorClampsToMinimum() {
+        let config = HeatMapConfiguration(paddingFactor: -0.5)
+        #expect(config.paddingFactor == 0)
+    }
 }

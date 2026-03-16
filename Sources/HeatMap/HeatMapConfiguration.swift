@@ -92,13 +92,20 @@ public struct HeatMapConfiguration: Sendable, Hashable {
 
     /// Creates a heat map configuration.
     ///
+    /// Invalid values are clamped to their minimum: `radius` to `1`,
+    /// `contourLevels` to `1`, `gridResolution` to `2`, and
+    /// `paddingFactor` to `0`.
+    ///
     /// - Parameters:
-    ///   - radius: The Gaussian kernel radius in meters. Default: `500`.
-    ///   - contourLevels: The number of contour levels. Default: `10`.
-    ///   - gridResolution: Grid cells along the longer axis. Default: `100`.
+    ///   - radius: The Gaussian kernel radius in meters. Minimum: `1`.
+    ///     Default: `500`.
+    ///   - contourLevels: The number of contour levels. Minimum: `1`.
+    ///     Default: `10`.
+    ///   - gridResolution: Grid cells along the longer axis. Minimum: `2`.
+    ///     Default: `100`.
     ///   - gradient: The color gradient. Default: ``HeatMapGradient/thermal``.
     ///   - paddingFactor: Bounding box padding as a radius multiple.
-    ///     Default: `1.5`.
+    ///     Minimum: `0`. Default: `1.5`.
     ///   - smoother: The polygon smoother. Default:
     ///     ``AnyPolygonSmoother/chaikin(iterations:)`` with 2 iterations.
     public init(
@@ -109,11 +116,11 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         paddingFactor: Double = 1.5,
         smoother: AnyPolygonSmoother = .chaikin()
     ) {
-        self.radius = radius
-        self.contourLevels = contourLevels
-        self.gridResolution = gridResolution
+        self.radius = max(radius, 1)
+        self.contourLevels = max(contourLevels, 1)
+        self.gridResolution = max(gridResolution, 2)
         self.gradient = gradient
-        self.paddingFactor = paddingFactor
+        self.paddingFactor = max(paddingFactor, 0)
         self.smoother = smoother
     }
 }
