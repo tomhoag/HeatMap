@@ -201,6 +201,12 @@ struct DensityGridTests {
         #expect(abs(gridTwo.maxDensity - gridOne.maxDensity) < 1e-6)
     }
 
+    @Test func zeroWeightProducesZeroDensity() {
+        let point = TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 0)
+        let grid = DensityGrid.compute(from: [point], configuration: defaultConfig)
+        #expect(grid.maxDensity == 0)
+    }
+
     @Test func radiusAffectsSpread() {
         // A narrower radius concentrates density more, resulting in a higher
         // peak value for the same weight. A wider radius spreads the density

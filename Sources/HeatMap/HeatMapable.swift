@@ -38,7 +38,8 @@ public protocol HeatMapable: Sendable, Identifiable {
 
     /// The density weight of the data point.
     ///
-    /// Higher values contribute more to the density field. A weight of `0`
-    /// effectively makes the point invisible in the heat map.
+    /// Must be non-negative. Higher values contribute more to the density
+    /// field. A weight of `0` effectively makes the point invisible in the
+    /// heat map. Passing a negative weight is a programmer error.
     var weight: Double { get }
 }

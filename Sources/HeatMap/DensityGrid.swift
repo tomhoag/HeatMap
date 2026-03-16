@@ -164,6 +164,7 @@ struct DensityGrid: Sendable {
         var grid = [Double](repeating: 0, count: rows * columns)
 
         for point in points {
+            assert(point.weight >= 0, "HeatMapable.weight must be non-negative, got \(point.weight)")
             let pointLat = point.coordinate.latitude
             let pointLon = point.coordinate.longitude
 
