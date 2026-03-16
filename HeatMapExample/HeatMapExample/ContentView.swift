@@ -12,12 +12,13 @@ import SwiftUI
 struct ContentView: View {
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 37.775, longitude: -122.418),
-            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+            center: CLLocationCoordinate2D(latitude: 39.8, longitude: -98.5),
+            span: MKCoordinateSpan(latitudeDelta: 30, longitudeDelta: 30)
         )
     )
 
-    @State private var radius: Double = 300
+    @State private var points: [HeatMapPoint] = []
+    @State private var radius: Double = 150_000
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
     @State private var selectedSmoother: SmootherOption = .chaikin2
@@ -60,17 +61,23 @@ struct ContentView: View {
 
     var body: some View {
         Map(position: $position) {
-            HeatMapLayer(
-                points: Self.samplePoints,
-                configuration: HeatMapConfiguration(
-                    radius: radius,
-                    contourLevels: Int(contourLevels),
-                    gradient: selectedGradient.gradient,
-                    smoother: selectedSmoother.smoother
+            if !points.isEmpty {
+                HeatMapLayer(
+                    points: points,
+                    configuration: HeatMapConfiguration(
+                        radius: radius,
+                        contourLevels: Int(contourLevels),
+                        gridResolution: 120,
+                        gradient: selectedGradient.gradient,
+                        smoother: selectedSmoother.smoother
+                    )
                 )
-            )
+            }
         }
         .mapStyle(.standard(elevation: .flat))
+        .task {
+            loadPoints()
+        }
         .overlay(alignment: .bottomTrailing) {
             GlassEffectContainer {
                 VStack(alignment: .trailing) {
@@ -121,8 +128,8 @@ struct ContentView: View {
             }
             .pickerStyle(.segmented)
 
-            LabeledContent("Radius: \(Int(radius))m") {
-                Slider(value: $radius, in: 100...1000, step: 50)
+            LabeledContent("Radius: \(Int(radius / 1000))km") {
+                Slider(value: $radius, in: 50_000...300_000, step: 10_000)
             }
 
             LabeledContent("Levels: \(Int(contourLevels))") {
@@ -134,6 +141,12 @@ struct ContentView: View {
             Color.clear
                 .glassEffect(in: .rect(cornerRadius: 16))
         }
+    }
+
+    private func loadPoints() {
+        guard let url = Bundle.main.url(forResource: "heatmap_points", withExtension: "json"),
+              let loaded = try? GSODLoader.load(from: url) else { return }
+        points = loaded
     }
 
     /// Sample points scattered around San Francisco.
