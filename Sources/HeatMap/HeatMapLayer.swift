@@ -22,7 +22,7 @@ import SwiftUI
 ///     }
 /// }
 /// .task {
-///     contours = HeatMapContours.compute(from: largePointArray)
+///     contours = await HeatMapContours.compute(from: largePointArray)
 /// }
 /// ```
 ///
@@ -30,7 +30,7 @@ import SwiftUI
 ///
 /// ### Computing Contours
 ///
-/// - ``compute(from:configuration:)``
+/// - ``compute(from:configuration:)-swift.type.method``
 public struct HeatMapContours: Sendable {
     /// The extracted contour polygons.
     let polygons: [ContourPolygon]
@@ -76,6 +76,35 @@ public struct HeatMapContours: Sendable {
             gradient: configuration.gradient
         )
     }
+
+    /// Asynchronously computes contours from the given points and configuration.
+    ///
+    /// This method moves the density grid computation, contour extraction,
+    /// and polygon smoothing off the calling actor, making it safe to call
+    /// from the main actor without blocking the UI.
+    ///
+    /// ```swift
+    /// .task {
+    ///     contours = await HeatMapContours.compute(from: largePointArray)
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - points: The weighted geographic data points.
+    ///   - configuration: The rendering configuration. Defaults to
+    ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:smoother:)``.
+    /// - Returns: A ``HeatMapContours`` value ready to pass to
+    ///   ``HeatMapLayer/init(contours:)``.
+    public static func compute<P: HeatMapable>(
+        from points: [P],
+        configuration: HeatMapConfiguration = HeatMapConfiguration()
+    ) async -> HeatMapContours {
+        let points = Array(points)
+        let configuration = configuration
+        return await Task.detached {
+            compute(from: points, configuration: configuration)
+        }.value
+    }
 }
 
 /// A heat map layer rendered as filled contour polygons inside a SwiftUI `Map`.
@@ -104,9 +133,9 @@ public struct HeatMapContours: Sendable {
 /// }
 /// ```
 ///
-/// For large datasets, pre-compute contours off the main actor using
-/// ``HeatMapContours/compute(from:configuration:)`` and pass the result
-/// to ``init(contours:)``.
+/// For large datasets, pre-compute contours asynchronously using
+/// ``HeatMapContours/compute(from:configuration:)-swift.type.method``
+/// and pass the result to ``init(contours:)``.
 ///
 /// ## Topics
 ///
