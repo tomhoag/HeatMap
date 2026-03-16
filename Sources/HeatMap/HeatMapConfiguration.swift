@@ -48,6 +48,10 @@ import Foundation
 /// ### Appearance
 ///
 /// - ``gradient``
+///
+/// ### Adaptive Configuration
+///
+/// - ``adaptive(for:)``
 public struct HeatMapConfiguration: Sendable, Hashable {
     /// The Gaussian kernel radius in meters.
     ///

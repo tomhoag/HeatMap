@@ -107,7 +107,27 @@ Map {
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
 | `smoother` | `.chaikin()` | Polygon smoother to reduce stair-step artifacts. |
 
-### 4. Pre-compute Contours for Large Datasets
+### 4. Adaptive Configuration
+
+If you don't know the geographic scale of your data in advance, let the library pick a reasonable `radius` and `gridResolution` for you:
+
+```swift
+let config = HeatMapConfiguration.adaptive(for: points)
+Map {
+    HeatMapLayer(points: points, configuration: config)
+}
+```
+
+You can still override individual properties afterward:
+
+```swift
+var config = HeatMapConfiguration.adaptive(for: points)
+config.gradient = .cool
+```
+
+**Note:** The adaptive configuration is a snapshot of the current point set. If points change dynamically, you must call `adaptive(for:)` again, which may shift the radius or resolution and cause a visual discontinuity. For stable visuals with dynamic data, prefer setting configuration values explicitly.
+
+### 5. Pre-compute Contours for Large Datasets
 
 For large datasets, compute contours asynchronously to avoid blocking the main actor:
 
@@ -126,7 +146,7 @@ var body: some View {
 }
 ```
 
-### 5. Access Contour Geometry
+### 6. Access Contour Geometry
 
 The computed contours expose their underlying polygon data for hit testing, export, or custom visualizations:
 
