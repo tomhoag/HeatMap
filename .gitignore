@@ -48,3 +48,6 @@ fastlane/test_output
 # Secrets
 .env
 *.xcconfig.local
+
+# Project notes
+TODO.md

@@ -122,13 +122,11 @@ public struct HeatMapLayer: MapContent {
 
     /// Maps a contour level index to a color from the gradient.
     private func colorForLevel(_ level: Int) -> Color {
-        guard totalLevels > 1, !gradient.colors.isEmpty else {
+        guard totalLevels > 1 else {
             return gradient.colors.first ?? .clear
         }
         let fraction = Double(level) / Double(totalLevels - 1)
-        let scaledIndex = fraction * Double(gradient.colors.count - 1)
-        let index = min(Int(scaledIndex), gradient.colors.count - 1)
-        return gradient.colors[index]
+        return gradient.color(for: fraction)
     }
 }
 
