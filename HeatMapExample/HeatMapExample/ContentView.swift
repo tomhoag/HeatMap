@@ -17,6 +17,8 @@ struct ContentView: View {
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
     @State private var selectedSmoother: SmootherOption = .chaikin2
+    @State private var legendAxis: Axis = .vertical
+    @State private var legendLabels: HeatMapLegend.LabelVisibility = .automatic
     @State private var showControls = false
     @Namespace private var namespace
 
@@ -51,6 +53,8 @@ struct ContentView: View {
                     gradient: selectedGradient.gradient,
                     levelCount: Int(contourLevels)
                 )
+                .legendAxis(legendAxis)
+                .legendLabels(legendLabels)
                 .padding()
             }
         }
@@ -71,6 +75,8 @@ struct ContentView: View {
                             contourLevels: $contourLevels,
                             selectedGradient: $selectedGradient,
                             selectedSmoother: $selectedSmoother,
+                            legendAxis: $legendAxis,
+                            legendLabels: $legendLabels,
                             showControls: $showControls
                         )
                         .glassEffectID("controls", in: namespace)
