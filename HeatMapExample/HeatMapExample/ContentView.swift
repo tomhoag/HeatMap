@@ -45,7 +45,7 @@ struct ContentView: View {
         .task {
             loadPoints()
         }
-        .overlay(alignment: .bottomLeading) {
+        .overlay(alignment: .topTrailing) {
             if !points.isEmpty {
                 HeatMapLegend(
                     gradient: selectedGradient.gradient,
