@@ -8,9 +8,9 @@ A Swift package for rendering geographic heat maps as filled contour polygons in
 
 ## Requirements
 
-- iOS 26+ / macOS 26+ / visionOS 26+
+- iOS 17+ / macOS 14+ / visionOS 1+
 - Swift 6.2+
-- Xcode 26+
+- Xcode 16+
 
 ## Installation
 
