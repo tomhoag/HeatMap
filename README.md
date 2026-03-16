@@ -157,6 +157,34 @@ for contour in result.contours {
 }
 ```
 
+### 7. Add a Gradient Legend
+
+Display a legend showing the color scale alongside the map:
+
+```swift
+Map {
+    HeatMapLayer(points: points, configuration: config)
+}
+.overlay(alignment: .bottomLeading) {
+    HeatMapLegend(gradient: config.gradient, levelCount: config.contourLevels)
+        .padding()
+}
+```
+
+For threshold labels derived from computed contours:
+
+```swift
+HeatMapLegend(contours: computedContours)
+```
+
+Configure the axis and label visibility with modifiers:
+
+```swift
+HeatMapLegend(gradient: .thermal, levelCount: 10)
+    .legendAxis(.horizontal)
+    .legendLabels(.hidden)
+```
+
 ### Built-in Gradients
 
 | Gradient | Colors |

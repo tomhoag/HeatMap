@@ -45,6 +45,15 @@ struct ContentView: View {
         .task {
             loadPoints()
         }
+        .overlay(alignment: .bottomLeading) {
+            if !points.isEmpty {
+                HeatMapLegend(
+                    gradient: selectedGradient.gradient,
+                    levelCount: Int(contourLevels)
+                )
+                .padding()
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             GlassEffectContainer {
                 VStack(alignment: .trailing) {
