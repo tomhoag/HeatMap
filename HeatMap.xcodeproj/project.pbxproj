@@ -6,14 +6,51 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0021F9F52F68515E005A85AD /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 0021F9F42F68515E005A85AD /* AGENTS.md */; };
+		0021FA122F685984005A85AD /* HeatMap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0021F9EA2F685146005A85AD /* HeatMap.framework */; };
+		0021FA132F685985005A85AD /* HeatMap.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0021F9EA2F685146005A85AD /* HeatMap.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0021FA142F685985005A85AD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0021F9E12F685146005A85AD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0021F9E92F685146005A85AD;
+			remoteInfo = HeatMap;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0021FA162F685985005A85AD /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0021FA132F685985005A85AD /* HeatMap.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0021F9EA2F685146005A85AD /* HeatMap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = HeatMap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		0021F9F42F68515E005A85AD /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+		0021FA062F68592E005A85AD /* HeatMapExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HeatMapExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0021F9EC2F685146005A85AD /* HeatMap */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = HeatMap;
+			sourceTree = "<group>";
+		};
+		0021FA072F68592E005A85AD /* HeatMapExample */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HeatMapExample;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,13 +63,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0021FA032F68592E005A85AD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0021FA122F685984005A85AD /* HeatMap.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		0021F9E02F685146005A85AD = {
 			isa = PBXGroup;
 			children = (
+				0021F9F42F68515E005A85AD /* AGENTS.md */,
 				0021F9EC2F685146005A85AD /* HeatMap */,
+				0021FA072F68592E005A85AD /* HeatMapExample */,
+				0021FA112F685984005A85AD /* Frameworks */,
 				0021F9EB2F685146005A85AD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +89,16 @@
 			isa = PBXGroup;
 			children = (
 				0021F9EA2F685146005A85AD /* HeatMap.framework */,
+				0021FA062F68592E005A85AD /* HeatMapExample.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		0021FA112F685984005A85AD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -81,6 +137,30 @@
 			productReference = 0021F9EA2F685146005A85AD /* HeatMap.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		0021FA052F68592E005A85AD /* HeatMapExample */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0021FA0E2F685930005A85AD /* Build configuration list for PBXNativeTarget "HeatMapExample" */;
+			buildPhases = (
+				0021FA022F68592E005A85AD /* Sources */,
+				0021FA032F68592E005A85AD /* Frameworks */,
+				0021FA042F68592E005A85AD /* Resources */,
+				0021FA162F685985005A85AD /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0021FA152F685985005A85AD /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0021FA072F68592E005A85AD /* HeatMapExample */,
+			);
+			name = HeatMapExample;
+			packageProductDependencies = (
+			);
+			productName = HeatMapExample;
+			productReference = 0021FA062F68592E005A85AD /* HeatMapExample.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -92,6 +172,9 @@
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					0021F9E92F685146005A85AD = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					0021FA052F68592E005A85AD = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -111,12 +194,21 @@
 			projectRoot = "";
 			targets = (
 				0021F9E92F685146005A85AD /* HeatMap */,
+				0021FA052F68592E005A85AD /* HeatMapExample */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		0021F9E82F685146005A85AD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0021F9F52F68515E005A85AD /* AGENTS.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0021FA042F68592E005A85AD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -133,7 +225,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0021FA022F68592E005A85AD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0021FA152F685985005A85AD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0021F9E92F685146005A85AD /* HeatMap */;
+			targetProxy = 0021FA142F685985005A85AD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0021F9EF2F685146005A85AD /* Debug */ = {
@@ -348,6 +455,75 @@
 			};
 			name = Release;
 		};
+		0021FA0F2F685930005A85AD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L6BVR86H7Q;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.offbyone.HeatMapExample;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0021FA102F685930005A85AD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L6BVR86H7Q;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.offbyone.HeatMapExample;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -365,6 +541,15 @@
 			buildConfigurations = (
 				0021F9F22F685146005A85AD /* Debug */,
 				0021F9F32F685146005A85AD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0021FA0E2F685930005A85AD /* Build configuration list for PBXNativeTarget "HeatMapExample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0021FA0F2F685930005A85AD /* Debug */,
+				0021FA102F685930005A85AD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
