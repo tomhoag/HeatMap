@@ -130,10 +130,7 @@ struct ContentView: View {
             }
         }
         .padding()
-        .background {
-            Color.clear
-                .glassEffect(in: .rect(cornerRadius: 16))
-        }
+        .glassEffect(in: .rect(cornerRadius: 16))
     }
 
     /// Sample points scattered around San Francisco.
