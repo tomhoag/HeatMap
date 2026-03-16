@@ -1,0 +1,170 @@
+# HeatMap
+
+A Swift package for rendering geographic heat maps as filled contour polygons inside SwiftUI `Map` views. It uses Gaussian kernel density estimation and the marching squares algorithm to turn weighted coordinate data into smooth, color-graded contour layers.
+
+## Requirements
+
+- iOS 26+ / macOS 26+ / visionOS 26+
+- Swift 6.2+
+- Xcode 26+
+
+## Installation
+
+Add HeatMap as a Swift Package Manager dependency:
+
+### In Xcode
+
+1. Open your project in Xcode.
+2. Go to **File → Add Package Dependencies…**
+3. Enter the repository URL: `https://github.com/tomhoag/HeatMap.git`
+4. Choose your version rule and add the package.
+
+### In `Package.swift`
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/tomhoag/HeatMap.git", from: "1.0.0")
+]
+```
+
+Then add `"HeatMap"` to the target's `dependencies`:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: ["HeatMap"]
+)
+```
+
+## Usage
+
+### 1. Conform Your Data to `HeatMapable`
+
+Your data model must conform to `HeatMapable`, which requires `coordinate` and `weight` properties:
+
+```swift
+import CoreLocation
+import HeatMap
+
+struct SensorReading: HeatMapable {
+    let id = UUID()
+    let coordinate: CLLocationCoordinate2D
+    let weight: Double
+}
+```
+
+`weight` must be non-negative. Higher values contribute more to the density field; a weight of `0` makes the point invisible.
+
+### 2. Add a Heat Map Layer to a Map
+
+Drop `HeatMapLayer` into a SwiftUI `Map` content builder:
+
+```swift
+import HeatMap
+import MapKit
+import SwiftUI
+
+struct MyMapView: View {
+    let points: [SensorReading]
+
+    var body: some View {
+        Map {
+            HeatMapLayer(points: points)
+        }
+    }
+}
+```
+
+### 3. Customize with `HeatMapConfiguration`
+
+Control the appearance and computation through `HeatMapConfiguration`:
+
+```swift
+Map {
+    HeatMapLayer(
+        points: points,
+        configuration: HeatMapConfiguration(
+            radius: 1000,          // Gaussian kernel radius in meters
+            contourLevels: 12,     // number of contour bands
+            gridResolution: 120,   // grid cells along the longer axis
+            gradient: .cool,       // color gradient (.thermal, .warm, .cool, or custom)
+            smoother: .chaikin(iterations: 3)  // polygon smoothing
+        )
+    )
+}
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `radius` | `500` | Gaussian kernel radius in meters. Larger values produce smoother, more diffuse maps. |
+| `contourLevels` | `10` | Number of contour bands. More levels produce a finer gradient. |
+| `gridResolution` | `100` | Grid cells along the longer axis. Higher values increase detail and computation time. |
+| `gradient` | `.thermal` | Color gradient for mapping density to color. |
+| `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
+| `smoother` | `.chaikin()` | Polygon smoother to reduce stair-step artifacts. |
+
+### 4. Pre-compute Contours for Large Datasets
+
+For large datasets, compute contours asynchronously to avoid blocking the main actor:
+
+```swift
+@State private var contours: HeatMapContours?
+
+var body: some View {
+    Map {
+        if let contours {
+            HeatMapLayer(contours: contours)
+        }
+    }
+    .task {
+        contours = await HeatMapContours.compute(from: largePointArray)
+    }
+}
+```
+
+### 5. Access Contour Geometry
+
+The computed contours expose their underlying polygon data for hit testing, export, or custom visualizations:
+
+```swift
+let result = await HeatMapContours.compute(from: points)
+for contour in result.contours {
+    print("Level \(contour.level), threshold \(contour.threshold): \(contour.coordinates.count) vertices")
+}
+```
+
+### Built-in Gradients
+
+| Gradient | Colors |
+|----------|--------|
+| `.thermal` | transparent → blue → cyan → green → yellow → orange → red |
+| `.warm` | transparent → yellow → orange → red |
+| `.cool` | transparent → cyan → blue → purple |
+| `.monochrome(color)` | transparent → color in six opacity steps |
+
+Create a custom gradient with `HeatMapGradient(colors:)` (requires at least two colors):
+
+```swift
+let custom = HeatMapGradient(colors: [
+    .clear,
+    .blue.opacity(0.3),
+    .green.opacity(0.6),
+    .red
+])
+```
+
+## Example App
+
+The repository includes **HeatMapExample**, an iOS app that demonstrates the library with GSOD (Global Summary of the Day) weather station data plotted on a map.
+
+### Running the Example
+
+1. Open `HeatMapExample/HeatMapExample.xcodeproj` in Xcode.
+2. The project already references the local `HeatMap` package.
+3. Select an iOS simulator or device and run.
+
+The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, and polygon smoothing in real time.
+
+## License
+
+See [LICENSE](LICENSE) for details.
