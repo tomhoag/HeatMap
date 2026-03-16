@@ -2,6 +2,10 @@
 
 A Swift package for rendering geographic heat maps as filled contour polygons inside SwiftUI `Map` views. It uses Gaussian kernel density estimation and the marching squares algorithm to turn weighted coordinate data into smooth, color-graded contour layers.
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/tomhoag/HeatMap)
+
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/tomhoag/HeatMap)
+
 ## Requirements
 
 - iOS 26+ / macOS 26+ / visionOS 26+
