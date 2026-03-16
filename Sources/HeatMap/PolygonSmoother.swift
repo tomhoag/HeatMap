@@ -43,8 +43,6 @@ import CoreLocation
 ///
 /// ### Built-in Smoothers
 ///
-/// - ``NullSmoother``
-/// - ``ChaikinSmoother``
 /// - ``AnyPolygonSmoother``
 public protocol PolygonSmoother: Sendable, Hashable {
     /// Smooths a closed polygon represented as an array of coordinates.
@@ -152,15 +150,10 @@ extension AnyPolygonSmoother {
 ///
 /// Returns the input coordinates unchanged. Use ``AnyPolygonSmoother/none``
 /// to access this smoother through the type-erased wrapper.
-public struct NullSmoother: PolygonSmoother {
-    /// Creates a null smoother.
-    public init() {}
+struct NullSmoother: PolygonSmoother {
+    init() {}
 
-    /// Returns the coordinates unchanged.
-    ///
-    /// - Parameter coordinates: The polygon vertices.
-    /// - Returns: The same coordinates, unmodified.
-    public func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
+    func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
         coordinates
     }
 }
@@ -171,53 +164,23 @@ public struct NullSmoother: PolygonSmoother {
 /// positions, doubling the vertex count per pass. The result converges toward
 /// a quadratic B-spline curve while preserving the polygon's overall shape.
 ///
-/// ```swift
-/// let smoother = ChaikinSmoother(iterations: 3)
-/// let smoothed = smoother.smooth(polygonCoordinates)
-/// ```
-///
 /// Use ``AnyPolygonSmoother/chaikin(iterations:)`` for convenient access
 /// in a ``HeatMapConfiguration``.
 ///
-/// - Reference: Chaikin, G. (1974). "An algorithm for high-speed curve generation."
-///
-/// ## Topics
-///
-/// ### Configuration
-///
-/// - ``iterations``
-/// - ``init(iterations:)``
-///
-/// ### Smoothing
-///
-/// - ``smooth(_:)``
-public struct ChaikinSmoother: PolygonSmoother {
+/// - Reference: [Chaikin, G. (1974). "An algorithm for high-speed curve generation.](https://www.sciencedirect.com/science/article/abs/pii/0146664X74900288)"
+struct ChaikinSmoother: PolygonSmoother {
     /// The number of subdivision passes.
-    ///
-    /// More passes produce smoother curves at the cost of more vertices.
-    /// Each pass doubles the vertex count. A value less than `1` results
-    /// in no smoothing.
-    public let iterations: Int
+    let iterations: Int
 
     /// Creates a Chaikin smoother.
     ///
     /// - Parameter iterations: The number of subdivision passes. Default: `2`.
     ///   Values less than `1` result in no smoothing.
-    public init(iterations: Int = 2) {
+    init(iterations: Int = 2) {
         self.iterations = iterations
     }
 
-    /// Smooths a closed polygon using Chaikin's corner-cutting algorithm.
-    ///
-    /// For each edge in the polygon, two new points are generated at the
-    /// 25% (Q) and 75% (R) positions. The polygon must have at least 3
-    /// vertices and ``iterations`` must be at least 1 for smoothing to occur.
-    ///
-    /// - Parameter coordinates: The polygon vertices (minimum 3 for smoothing).
-    /// - Returns: The smoothed polygon vertices, or the original coordinates
-    ///   if the polygon has fewer than 3 vertices or ``iterations`` is less
-    ///   than 1.
-    public func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
+    func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
         guard coordinates.count >= 3, iterations >= 1 else {
             return coordinates
         }
