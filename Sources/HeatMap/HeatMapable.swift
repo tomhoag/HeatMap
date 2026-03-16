@@ -1,5 +1,5 @@
 //
-//  HeatMapPoint.swift
+//  HeatMapable.swift
 //  HeatMap
 //
 //  Created by Tom Hoag on 3/16/26.
