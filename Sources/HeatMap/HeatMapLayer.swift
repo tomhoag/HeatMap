@@ -40,8 +40,15 @@ public struct HeatMapContours: Sendable {
             from: grid,
             levels: configuration.contourLevels
         )
+        let smoothed = result.polygons.map { polygon in
+            ContourPolygon(
+                level: polygon.level,
+                threshold: polygon.threshold,
+                coordinates: configuration.smoother.smooth(polygon.coordinates)
+            )
+        }
         return HeatMapContours(
-            polygons: result.polygons,
+            polygons: smoothed,
             levels: configuration.contourLevels,
             gradient: configuration.gradient
         )
@@ -97,7 +104,13 @@ public struct HeatMapLayer: MapContent {
             from: grid,
             levels: configuration.contourLevels
         )
-        self.contours = result.polygons
+        self.contours = result.polygons.map { polygon in
+            ContourPolygon(
+                level: polygon.level,
+                threshold: polygon.threshold,
+                coordinates: configuration.smoother.smooth(polygon.coordinates)
+            )
+        }
         self.gradient = configuration.gradient
         self.totalLevels = configuration.contourLevels
     }

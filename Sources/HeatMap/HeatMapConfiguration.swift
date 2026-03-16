@@ -30,17 +30,22 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// outermost points. Default: 1.5.
     public var paddingFactor: Double
 
+    /// The polygon smoother applied to extracted contours. Default: `.chaikin()`.
+    public var smoother: AnyPolygonSmoother
+
     public init(
         radius: Double = 500,
         contourLevels: Int = 10,
         gridResolution: Int = 100,
         gradient: HeatMapGradient = .thermal,
-        paddingFactor: Double = 1.5
+        paddingFactor: Double = 1.5,
+        smoother: AnyPolygonSmoother = .chaikin()
     ) {
         self.radius = radius
         self.contourLevels = contourLevels
         self.gridResolution = gridResolution
         self.gradient = gradient
         self.paddingFactor = paddingFactor
+        self.smoother = smoother
     }
 }

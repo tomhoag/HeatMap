@@ -11,13 +11,20 @@ import Foundation
 
 /// A single contour polygon at a specific density level.
 struct ContourPolygon: Sendable, Identifiable {
-    let id = UUID()
+    let id: UUID
     /// The contour level index (0 = lowest density).
     let level: Int
     /// The density threshold for this contour.
     let threshold: Double
     /// The closed polygon vertices as geographic coordinates.
     let coordinates: [CLLocationCoordinate2D]
+
+    init(level: Int, threshold: Double, coordinates: [CLLocationCoordinate2D]) {
+        self.id = UUID()
+        self.level = level
+        self.threshold = threshold
+        self.coordinates = coordinates
+    }
 }
 
 /// The result of contour extraction: all polygons across all levels.

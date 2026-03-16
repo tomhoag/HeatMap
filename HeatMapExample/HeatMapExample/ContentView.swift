@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var radius: Double = 300
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
+    @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var showControls = true
 
     enum GradientOption: String, CaseIterable, Identifiable {
@@ -38,6 +39,24 @@ struct ContentView: View {
         }
     }
 
+    enum SmootherOption: String, CaseIterable, Identifiable {
+        case none = "None"
+        case chaikin1 = "Chaikin 1"
+        case chaikin2 = "Chaikin 2"
+        case chaikin3 = "Chaikin 3"
+
+        var id: String { rawValue }
+
+        var smoother: AnyPolygonSmoother {
+            switch self {
+            case .none: .none
+            case .chaikin1: .chaikin(iterations: 1)
+            case .chaikin2: .chaikin(iterations: 2)
+            case .chaikin3: .chaikin(iterations: 3)
+            }
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             Map(position: $position) {
@@ -46,7 +65,8 @@ struct ContentView: View {
                     configuration: HeatMapConfiguration(
                         radius: radius,
                         contourLevels: Int(contourLevels),
-                        gradient: selectedGradient.gradient
+                        gradient: selectedGradient.gradient,
+                        smoother: selectedSmoother.smoother
                     )
                 )
             }
@@ -57,7 +77,7 @@ struct ContentView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            Button("Controls", systemImage: showControls ? "slider.horizontal.3" : "slider.horizontal.3") {
+            Button("Controls", systemImage: "slider.horizontal.3") {
                 showControls.toggle()
             }
             .buttonStyle(.borderedProminent)
@@ -69,6 +89,13 @@ struct ContentView: View {
         VStack(spacing: 12) {
             Picker("Gradient", selection: $selectedGradient) {
                 ForEach(GradientOption.allCases) { option in
+                    Text(option.rawValue).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Picker("Smoothing", selection: $selectedSmoother) {
+                ForEach(SmootherOption.allCases) { option in
                     Text(option.rawValue).tag(option)
                 }
             }
