@@ -20,5 +20,10 @@ let package = Package(
             name: "HeatMap",
             path: "Sources/HeatMap"
         ),
+        .testTarget(
+            name: "HeatMapTests",
+            dependencies: ["HeatMap"],
+            path: "Tests/HeatMapTests"
+        ),
     ]
 )
