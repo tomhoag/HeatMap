@@ -21,7 +21,8 @@ struct ContentView: View {
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
     @State private var selectedSmoother: SmootherOption = .chaikin2
-    @State private var showControls = true
+    @State private var showControls = false
+    @Namespace private var namespace
 
     enum GradientOption: String, CaseIterable, Identifiable {
         case thermal = "Thermal"
@@ -58,35 +59,54 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Map(position: $position) {
-                HeatMapLayer(
-                    points: Self.samplePoints,
-                    configuration: HeatMapConfiguration(
-                        radius: radius,
-                        contourLevels: Int(contourLevels),
-                        gradient: selectedGradient.gradient,
-                        smoother: selectedSmoother.smoother
-                    )
+        Map(position: $position) {
+            HeatMapLayer(
+                points: Self.samplePoints,
+                configuration: HeatMapConfiguration(
+                    radius: radius,
+                    contourLevels: Int(contourLevels),
+                    gradient: selectedGradient.gradient,
+                    smoother: selectedSmoother.smoother
                 )
-            }
-            .mapStyle(.standard(elevation: .flat))
-
-            if showControls {
-                controlPanel
-            }
+            )
         }
-        .overlay(alignment: .topTrailing) {
-            Button("Controls", systemImage: "slider.horizontal.3") {
-                showControls.toggle()
+        .mapStyle(.standard(elevation: .flat))
+        .overlay(alignment: .bottomTrailing) {
+            GlassEffectContainer {
+                VStack(alignment: .trailing) {
+                    if !showControls {
+                        Button("Controls", systemImage: "slider.horizontal.3") {
+                            withAnimation(.smooth) {
+                                showControls = true
+                            }
+                        }
+                        .buttonStyle(.glass)
+                        .glassEffectID("controls", in: namespace)
+                    } else {
+                        controlPanel
+                            .glassEffectID("controls", in: namespace)
+                    }
+                }
             }
-            .buttonStyle(.borderedProminent)
             .padding()
         }
     }
 
     private var controlPanel: some View {
         VStack(spacing: 12) {
+            HStack {
+                Text("Controls")
+                    .font(.headline)
+                Spacer()
+                Button("Done", systemImage: "xmark.circle.fill") {
+                    withAnimation(.smooth) {
+                        showControls = false
+                    }
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.glass)
+            }
+
             Picker("Gradient", selection: $selectedGradient) {
                 ForEach(GradientOption.allCases) { option in
                     Text(option.rawValue).tag(option)
@@ -110,8 +130,10 @@ struct ContentView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
-        .padding()
+        .background {
+            Color.clear
+                .glassEffect(in: .rect(cornerRadius: 16))
+        }
     }
 
     /// Sample points scattered around San Francisco.
