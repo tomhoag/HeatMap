@@ -19,7 +19,7 @@ import SwiftUI
 /// // Built-in
 /// let config = HeatMapConfiguration(gradient: .thermal)
 ///
-/// // Custom
+/// // Custom (returns nil if fewer than 2 colors)
 /// let custom = HeatMapGradient(colors: [
 ///     .clear,
 ///     .blue.opacity(0.3),
@@ -50,13 +50,15 @@ public struct HeatMapGradient: Sendable, Hashable {
     /// Creates a gradient from the given array of colors.
     ///
     /// Colors should be ordered from lowest density (transparent/cool) to
-    /// highest density (opaque/hot).
+    /// highest density (opaque/hot). Returns `nil` if fewer than two colors
+    /// are provided.
     ///
     /// - Parameter colors: At least two colors, ordered from lowest
     ///   to highest density.
-    /// - Precondition: `colors` must contain at least two elements.
-    public init(colors: [Color]) {
-        precondition(colors.count >= 2, "HeatMapGradient requires at least two colors.")
+    /// - Returns: A gradient, or `nil` if `colors` contains fewer than
+    ///   two elements.
+    public init?(colors: [Color]) {
+        guard colors.count >= 2 else { return nil }
         self.colors = colors
         let env = EnvironmentValues()
         self.resolvedStops = colors.map { $0.resolve(in: env) }
@@ -118,7 +120,7 @@ extension HeatMapGradient {
         Color.yellow.opacity(0.7),
         Color.orange.opacity(0.8),
         Color.red.opacity(0.9)
-    ])
+    ])!
 
     /// A warm gradient: transparent → yellow → orange → red.
     public static let warm = HeatMapGradient(colors: [
@@ -127,7 +129,7 @@ extension HeatMapGradient {
         Color.orange.opacity(0.6),
         Color.red.opacity(0.8),
         Color.red
-    ])
+    ])!
 
     /// A cool gradient: transparent → cyan → blue → purple.
     public static let cool = HeatMapGradient(colors: [
@@ -136,7 +138,7 @@ extension HeatMapGradient {
         Color.blue.opacity(0.6),
         Color.purple.opacity(0.8),
         Color.purple
-    ])
+    ])!
 
     /// Creates a monochrome gradient that fades from transparent to the given color.
     ///
@@ -153,6 +155,6 @@ extension HeatMapGradient {
             color.opacity(0.6),
             color.opacity(0.8),
             color
-        ])
+        ])!
     }
 }

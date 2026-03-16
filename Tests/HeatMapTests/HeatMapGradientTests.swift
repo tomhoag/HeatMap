@@ -22,7 +22,8 @@ struct HeatMapGradientTests {
 
     @Test func customGradientPreservesColors() {
         let gradient = HeatMapGradient(colors: [.red, .blue])
-        #expect(gradient.colors.count == 2)
+        #expect(gradient != nil)
+        #expect(gradient!.colors.count == 2)
     }
 
     @Test func hashableEquality() {
@@ -40,7 +41,7 @@ struct HeatMapGradientTests {
     // MARK: - color(for:) Interpolation
 
     @Test func colorForFractionZeroReturnsFirstColor() {
-        let gradient = HeatMapGradient(colors: [.red, .blue])
+        let gradient = HeatMapGradient(colors: [.red, .blue])!
         let env = EnvironmentValues()
         let result = gradient.color(for: 0).resolve(in: env)
         let expected = Color.red.resolve(in: env)
@@ -51,7 +52,7 @@ struct HeatMapGradientTests {
     }
 
     @Test func colorForFractionOneReturnsLastColor() {
-        let gradient = HeatMapGradient(colors: [.red, .blue])
+        let gradient = HeatMapGradient(colors: [.red, .blue])!
         let env = EnvironmentValues()
         let result = gradient.color(for: 1).resolve(in: env)
         let expected = Color.blue.resolve(in: env)
@@ -62,7 +63,7 @@ struct HeatMapGradientTests {
     }
 
     @Test func colorForFractionMidInterpolates() {
-        let gradient = HeatMapGradient(colors: [.red, .blue])
+        let gradient = HeatMapGradient(colors: [.red, .blue])!
         let env = EnvironmentValues()
         let result = gradient.color(for: 0.5).resolve(in: env)
         let first = Color.red.resolve(in: env)
@@ -77,7 +78,7 @@ struct HeatMapGradientTests {
     }
 
     @Test func colorForFractionClampsBelowZero() {
-        let gradient = HeatMapGradient(colors: [.red, .blue])
+        let gradient = HeatMapGradient(colors: [.red, .blue])!
         let env = EnvironmentValues()
         let atZero = gradient.color(for: 0).resolve(in: env)
         let belowZero = gradient.color(for: -0.5).resolve(in: env)
@@ -86,11 +87,19 @@ struct HeatMapGradientTests {
     }
 
     @Test func colorForFractionClampsAboveOne() {
-        let gradient = HeatMapGradient(colors: [.red, .blue])
+        let gradient = HeatMapGradient(colors: [.red, .blue])!
         let env = EnvironmentValues()
         let atOne = gradient.color(for: 1).resolve(in: env)
         let aboveOne = gradient.color(for: 1.5).resolve(in: env)
         #expect(abs(atOne.red - aboveOne.red) < 0.01)
         #expect(abs(atOne.blue - aboveOne.blue) < 0.01)
+    }
+
+    @Test func initWithEmptyColorsReturnsNil() {
+        #expect(HeatMapGradient(colors: []) == nil)
+    }
+
+    @Test func initWithSingleColorReturnsNil() {
+        #expect(HeatMapGradient(colors: [.red]) == nil)
     }
 }
