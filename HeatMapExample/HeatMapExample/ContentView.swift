@@ -10,12 +10,7 @@ import MapKit
 import SwiftUI
 
 struct ContentView: View {
-    @State private var position: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 39.8, longitude: -98.5),
-            span: MKCoordinateSpan(latitudeDelta: 30, longitudeDelta: 30)
-        )
-    )
+    @State private var position: MapCameraPosition = .automatic
 
     @State private var points: [HeatMapPoint] = []
     @State private var radius: Double = 150_000
@@ -40,7 +35,13 @@ struct ContentView: View {
                 )
             }
         }
-        .mapStyle(.standard(elevation: .flat))
+        .mapStyle(
+            .hybrid(
+                elevation: .automatic,
+                pointsOfInterest: .excludingAll,
+                showsTraffic: false
+            )
+        )
         .task {
             loadPoints()
         }
@@ -73,8 +74,21 @@ struct ContentView: View {
 
     private func loadPoints() {
         guard let url = Bundle.main.url(forResource: "heatmap_points", withExtension: "json"),
-              let loaded = try? GSODLoader.load(from: url) else { return }
+              let loaded = try? GSODLoader.load(from: url),
+              !loaded.isEmpty else { return }
         points = loaded
+
+        let lats = loaded.map(\.coordinate.latitude)
+        let lons = loaded.map(\.coordinate.longitude)
+        let center = CLLocationCoordinate2D(
+            latitude: (lats.min()! + lats.max()!) / 2,
+            longitude: (lons.min()! + lons.max()!) / 2
+        )
+        let span = MKCoordinateSpan(
+            latitudeDelta: (lats.max()! - lats.min()!) * 1.1,
+            longitudeDelta: (lons.max()! - lons.min()!) * 1.1
+        )
+        position = .region(MKCoordinateRegion(center: center, span: span))
     }
 
     /// Sample points scattered around San Francisco.
