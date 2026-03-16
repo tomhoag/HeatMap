@@ -13,7 +13,7 @@ struct ContentView: View {
     @State private var position: MapCameraPosition = .automatic
 
     @State private var points: [HeatMapPoint] = []
-    @State private var radius: Double = 150_000
+    @State private var radius: Double = 500
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
     @State private var selectedSmoother: SmootherOption = .chaikin2
@@ -77,6 +77,9 @@ struct ContentView: View {
               let loaded = try? GSODLoader.load(from: url),
               !loaded.isEmpty else { return }
         points = loaded
+
+        let adaptive = HeatMapConfiguration.adaptive(for: loaded)
+        radius = adaptive.radius
 
         let lats = loaded.map(\.coordinate.latitude)
         let lons = loaded.map(\.coordinate.longitude)
