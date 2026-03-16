@@ -121,10 +121,11 @@ struct DensityGrid: Sendable {
             for row in rowStart...rowEnd {
                 let cellLat = minLat + (Double(row) + 0.5) * latStep
                 let dy = (cellLat - pointLat) * metersPerDegreeLat
+                let lonScale = metersPerDegreeLon(at: cellLat)
 
                 for col in colStart...colEnd {
                     let cellLon = minLon + (Double(col) + 0.5) * lonStep
-                    let dx = (cellLon - pointLon) * metersPerDegreeLon(at: cellLat)
+                    let dx = (cellLon - pointLon) * lonScale
 
                     let distanceSquared = dx * dx + dy * dy
                     let value = point.weight * exp(-distanceSquared / twoSigmaSquared)

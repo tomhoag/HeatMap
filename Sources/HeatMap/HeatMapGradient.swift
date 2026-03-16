@@ -16,6 +16,9 @@ public struct HeatMapGradient: Sendable, Hashable {
     /// The color stops from lowest density to highest density.
     public let colors: [Color]
 
+    /// Pre-resolved RGBA components for each color stop, computed once at init.
+    private let resolvedStops: [Color.Resolved]
+
     /// Creates a gradient from the given array of colors.
     ///
     /// - Parameter colors: At least two colors, ordered from lowest
@@ -23,6 +26,17 @@ public struct HeatMapGradient: Sendable, Hashable {
     public init(colors: [Color]) {
         precondition(colors.count >= 2, "HeatMapGradient requires at least two colors.")
         self.colors = colors
+        let env = EnvironmentValues()
+        self.resolvedStops = colors.map { $0.resolve(in: env) }
+    }
+
+    // Hashable conformance based only on colors (resolvedStops are derived).
+    public static func == (lhs: HeatMapGradient, rhs: HeatMapGradient) -> Bool {
+        lhs.colors == rhs.colors
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(colors)
     }
 }
 
@@ -35,18 +49,17 @@ extension HeatMapGradient {
     ///   color stops in the sRGB color space.
     public func color(for fraction: Double) -> Color {
         let clamped = min(max(fraction, 0), 1)
-        guard colors.count >= 2 else {
+        guard resolvedStops.count >= 2 else {
             return colors.first ?? .clear
         }
 
-        let scaledIndex = clamped * Double(colors.count - 1)
+        let scaledIndex = clamped * Double(resolvedStops.count - 1)
         let lower = Int(scaledIndex)
-        let upper = min(lower + 1, colors.count - 1)
+        let upper = min(lower + 1, resolvedStops.count - 1)
         let t = Float(scaledIndex - Double(lower))
 
-        let env = EnvironmentValues()
-        let c0 = colors[lower].resolve(in: env)
-        let c1 = colors[upper].resolve(in: env)
+        let c0 = resolvedStops[lower]
+        let c1 = resolvedStops[upper]
 
         let resolved = Color.Resolved(
             red: c0.red + t * (c1.red - c0.red),
