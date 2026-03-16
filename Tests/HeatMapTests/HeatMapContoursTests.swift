@@ -38,4 +38,19 @@ struct HeatMapContoursTests {
         #expect(contours.levels == 10)
         #expect(contours.gradient == .thermal)
     }
+
+    // MARK: - Async Compute
+
+    @Test func asyncComputePreservesConfiguration() async {
+        let config = HeatMapConfiguration(contourLevels: 5, gradient: .warm)
+        let contours = await HeatMapContours.compute(from: tightCluster, configuration: config)
+        #expect(contours.levels == 5)
+        #expect(contours.gradient == .warm)
+        #expect(!contours.polygons.isEmpty)
+    }
+
+    @Test func asyncComputeFromEmptyPoints() async {
+        let contours = await HeatMapContours.compute(from: [TestPoint]())
+        #expect(contours.polygons.isEmpty)
+    }
 }
