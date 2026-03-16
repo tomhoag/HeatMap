@@ -8,6 +8,61 @@
 import MapKit
 import SwiftUI
 
+/// A single contour polygon representing an iso-density region.
+///
+/// Each contour has a ``level`` index (0 = lowest density), a density
+/// ``threshold``, and an array of geographic ``coordinates`` forming
+/// a closed polygon.
+///
+/// You don't create `HeatMapContour` values directly. Instead, access
+/// them through ``HeatMapContours/contours`` after computing contours:
+///
+/// ```swift
+/// let result = await HeatMapContours.compute(from: points)
+/// for contour in result.contours {
+///     print("Level \(contour.level): \(contour.coordinates.count) vertices")
+/// }
+/// ```
+///
+/// The contour geometry is useful for advanced use cases such as hit
+/// testing, exporting polygon data, or building custom visualizations
+/// outside of ``HeatMapLayer``.
+///
+/// ## Topics
+///
+/// ### Identifying the Contour
+///
+/// - ``id``
+/// - ``level``
+/// - ``threshold``
+///
+/// ### Accessing Geometry
+///
+/// - ``coordinates``
+public struct HeatMapContour: Sendable, Identifiable {
+    /// A unique identifier for this contour polygon.
+    public let id: UUID
+
+    /// The contour level index, starting at 0 for the lowest density.
+    ///
+    /// Multiple contour polygons may share the same level when the density
+    /// field has disconnected regions at a given threshold.
+    public let level: Int
+
+    /// The density threshold for this contour.
+    ///
+    /// Points inside this polygon have a density value at or above this
+    /// threshold.
+    public let threshold: Double
+
+    /// The closed polygon vertices as geographic coordinates.
+    ///
+    /// The polygon is implicitly closed — the last vertex connects back
+    /// to the first without a duplicate closing point. The coordinates
+    /// have already been smoothed by the configured ``PolygonSmoother``.
+    public let coordinates: [CLLocationCoordinate2D]
+}
+
 /// Pre-computed contour data for use with ``HeatMapLayer``.
 ///
 /// For large datasets, computing contours on the main actor can block the
@@ -26,20 +81,87 @@ import SwiftUI
 /// }
 /// ```
 ///
+/// ### Inspecting Contour Geometry
+///
+/// Beyond rendering, you can inspect the computed contours for hit testing,
+/// data export, or building custom visualizations:
+///
+/// ```swift
+/// let result = await HeatMapContours.compute(from: points)
+/// print("\(result.contourCount) polygons across \(result.levelCount) levels")
+///
+/// for contour in result.contours {
+///     // Access level, threshold, and geographic coordinates
+///     print("Level \(contour.level): \(contour.coordinates.count) vertices")
+/// }
+/// ```
+///
 /// ## Topics
 ///
 /// ### Computing Contours
 ///
 /// - ``compute(from:configuration:)-swift.type.method``
+///
+/// ### Inspecting Results
+///
+/// - ``contours``
+/// - ``contourCount``
+/// - ``levelCount``
+/// - ``gradient``
+///
+/// ### Contour Data
+///
+/// - ``HeatMapContour``
 public struct HeatMapContours: Sendable {
-    /// The extracted contour polygons.
+    /// The extracted contour polygons (internal representation).
     let polygons: [ContourPolygon]
 
     /// The number of contour levels used during extraction.
     let levels: Int
 
-    /// The gradient associated with these contours.
-    let gradient: HeatMapGradient
+    /// The gradient used during computation (internal storage).
+    let _gradient: HeatMapGradient
+
+    /// The contour polygons as ``HeatMapContour`` values.
+    ///
+    /// Polygons are ordered from lowest level (outermost) to highest
+    /// (innermost). Multiple polygons may share the same level if the
+    /// density field has disconnected regions at that threshold.
+    ///
+    /// Use this property to access the underlying contour geometry for
+    /// hit testing, exporting polygon data, or building custom
+    /// visualizations outside of ``HeatMapLayer``.
+    public var contours: [HeatMapContour] {
+        polygons.map { polygon in
+            HeatMapContour(
+                id: polygon.id,
+                level: polygon.level,
+                threshold: polygon.threshold,
+                coordinates: polygon.coordinates
+            )
+        }
+    }
+
+    /// The total number of contour polygons across all levels.
+    ///
+    /// This may be greater than ``levelCount`` when the density field
+    /// has disconnected regions that produce multiple polygons at the
+    /// same level.
+    public var contourCount: Int { polygons.count }
+
+    /// The number of contour levels used during extraction.
+    ///
+    /// This matches the ``HeatMapConfiguration/contourLevels`` value
+    /// that was used to compute these contours.
+    public var levelCount: Int { levels }
+
+    /// The color gradient associated with these contours.
+    ///
+    /// This is the ``HeatMapGradient`` that was specified in the
+    /// ``HeatMapConfiguration`` used during computation. It is also
+    /// used by ``HeatMapLayer/init(contours:)`` to color the rendered
+    /// polygons.
+    public var gradient: HeatMapGradient { _gradient }
 
     /// Computes contours from the given points and configuration.
     ///
@@ -73,7 +195,7 @@ public struct HeatMapContours: Sendable {
         return HeatMapContours(
             polygons: smoothed,
             levels: configuration.contourLevels,
-            gradient: configuration.gradient
+            _gradient: configuration.gradient
         )
     }
 
@@ -197,7 +319,7 @@ public struct HeatMapLayer: MapContent {
     /// - Parameter contours: Pre-computed contour data.
     public init(contours: HeatMapContours) {
         self.contours = contours.polygons
-        self.gradient = contours.gradient
+        self.gradient = contours._gradient
         self.totalLevels = contours.levels
     }
 
