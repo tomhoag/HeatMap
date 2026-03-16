@@ -189,6 +189,10 @@ The repository includes **HeatMapExample**, an iOS app that demonstrates the lib
 
 The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, and polygon smoothing in real time.
 
+## Documentation
+
+Full API documentation is available at [Swift Package Index](https://swiftpackageindex.com/tomhoag/HeatMap).
+
 ## License
 
 See [LICENSE](LICENSE) for details.
