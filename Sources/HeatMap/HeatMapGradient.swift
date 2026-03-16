@@ -7,11 +7,39 @@
 
 import SwiftUI
 
-/// A color gradient mapping for heat map density levels.
+/// A color gradient that maps density fractions to interpolated colors.
 ///
-/// Each gradient contains an array of colors ordered from lowest density
-/// (index 0) to highest density. The first color is typically transparent
-/// so areas with no data are see-through.
+/// Each gradient contains an ordered array of color stops from lowest
+/// density (index 0) to highest density. The first color is typically
+/// transparent so areas with no data are see-through on the map.
+///
+/// Use one of the built-in gradients or create your own:
+///
+/// ```swift
+/// // Built-in
+/// let config = HeatMapConfiguration(gradient: .thermal)
+///
+/// // Custom
+/// let custom = HeatMapGradient(colors: [
+///     .clear,
+///     .blue.opacity(0.3),
+///     .green.opacity(0.6),
+///     .red
+/// ])
+/// ```
+///
+/// ## Topics
+///
+/// ### Built-in Gradients
+///
+/// - ``thermal``
+/// - ``warm``
+/// - ``cool``
+/// - ``monochrome(_:)``
+///
+/// ### Sampling Colors
+///
+/// - ``color(for:)``
 public struct HeatMapGradient: Sendable, Hashable {
     /// The color stops from lowest density to highest density.
     public let colors: [Color]
@@ -21,8 +49,12 @@ public struct HeatMapGradient: Sendable, Hashable {
 
     /// Creates a gradient from the given array of colors.
     ///
+    /// Colors should be ordered from lowest density (transparent/cool) to
+    /// highest density (opaque/hot).
+    ///
     /// - Parameter colors: At least two colors, ordered from lowest
     ///   to highest density.
+    /// - Precondition: `colors` must contain at least two elements.
     public init(colors: [Color]) {
         precondition(colors.count >= 2, "HeatMapGradient requires at least two colors.")
         self.colors = colors
@@ -41,12 +73,15 @@ public struct HeatMapGradient: Sendable, Hashable {
 }
 
 extension HeatMapGradient {
-    /// Returns the interpolated color for the given fraction.
+    /// Returns the interpolated color for a given density fraction.
     ///
-    /// - Parameter fraction: A value from 0 (lowest density) to 1
+    /// The fraction is linearly mapped across the gradient's color stops
+    /// and interpolated in the sRGB color space.
+    ///
+    /// - Parameter fraction: A value from `0` (lowest density) to `1`
     ///   (highest density). Values outside this range are clamped.
     /// - Returns: A color linearly interpolated between the gradient's
-    ///   color stops in the sRGB color space.
+    ///   color stops.
     public func color(for fraction: Double) -> Color {
         let clamped = min(max(fraction, 0), 1)
         guard resolvedStops.count >= 2 else {
@@ -73,6 +108,8 @@ extension HeatMapGradient {
 
 extension HeatMapGradient {
     /// A thermal gradient: transparent → blue → cyan → green → yellow → orange → red.
+    ///
+    /// This is the default gradient used by ``HeatMapConfiguration``.
     public static let thermal = HeatMapGradient(colors: [
         Color.blue.opacity(0.0),
         Color.blue.opacity(0.4),
@@ -101,10 +138,13 @@ extension HeatMapGradient {
         Color.purple
     ])
 
-    /// A monochrome gradient using a single hue from transparent to opaque.
+    /// Creates a monochrome gradient that fades from transparent to the given color.
+    ///
+    /// Useful for single-hue visualizations where only intensity varies.
     ///
     /// - Parameter color: The color to use for the gradient.
-    /// - Returns: A gradient that fades from transparent to the given color.
+    /// - Returns: A gradient that fades from transparent to the given color
+    ///   in six evenly-spaced opacity steps.
     public static func monochrome(_ color: Color) -> HeatMapGradient {
         HeatMapGradient(colors: [
             color.opacity(0.0),

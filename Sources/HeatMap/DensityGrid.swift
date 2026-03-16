@@ -10,38 +10,93 @@ import Foundation
 
 /// A 2D grid of density values computed from weighted geographic points
 /// using Gaussian kernel density estimation.
+///
+/// The grid is constructed over a padded bounding box that encloses all
+/// input points. Each cell accumulates contributions from nearby points
+/// using a Gaussian kernel whose spread is controlled by
+/// ``HeatMapConfiguration/radius``.
+///
+/// You don't create a `DensityGrid` directly. Instead, it is built
+/// internally by ``HeatMapLayer`` and ``HeatMapContours`` during contour
+/// extraction.
+///
+/// ## Topics
+///
+/// ### Computing the Grid
+///
+/// - ``compute(from:configuration:)``
+///
+/// ### Querying Values
+///
+/// - ``value(row:col:)``
+/// - ``coordinate(row:col:)``
 struct DensityGrid: Sendable {
     /// Row-major storage: `values[row * columns + column]`.
     let values: [Double]
+
+    /// The number of rows in the grid.
     let rows: Int
+
+    /// The number of columns in the grid.
     let columns: Int
 
-    /// The geographic bounding box of the grid (with padding applied).
+    /// The southern boundary of the grid in degrees latitude.
     let minLatitude: Double
+
+    /// The northern boundary of the grid in degrees latitude.
     let maxLatitude: Double
+
+    /// The western boundary of the grid in degrees longitude.
     let minLongitude: Double
+
+    /// The eastern boundary of the grid in degrees longitude.
     let maxLongitude: Double
 
-    /// The size of each grid cell in degrees.
+    /// The height of each grid cell in degrees latitude.
     let latitudeStep: Double
+
+    /// The width of each grid cell in degrees longitude.
     let longitudeStep: Double
 
-    /// The minimum and maximum density values in the grid.
+    /// The smallest density value found in the grid.
     let minDensity: Double
+
+    /// The largest density value found in the grid.
     let maxDensity: Double
 
     /// Approximate meters per degree of latitude.
     private static let metersPerDegreeLat: Double = 111_320
 
-    /// Returns approximate meters per degree of longitude at the given latitude.
+    /// Returns the approximate meters per degree of longitude at the given latitude.
+    ///
+    /// Longitude degrees shrink toward the poles due to the convergence of
+    /// meridians. This method applies a cosine correction.
+    ///
+    /// - Parameter latitude: The latitude in degrees at which to compute the scale.
+    /// - Returns: The approximate distance in meters of one degree of longitude.
     private static func metersPerDegreeLon(at latitude: Double) -> Double {
         metersPerDegreeLat * cos(latitude * .pi / 180)
     }
 
     /// Computes a density grid from the given heat map points.
     ///
-    /// This method is nonisolated and `Sendable`-safe, suitable for
-    /// calling from a background context.
+    /// The algorithm:
+    /// 1. Computes the bounding box of all points.
+    /// 2. Pads the bounding box by ``HeatMapConfiguration/radius`` ×
+    ///    ``HeatMapConfiguration/paddingFactor``.
+    /// 3. Divides the region into a grid whose longer axis has
+    ///    ``HeatMapConfiguration/gridResolution`` cells.
+    /// 4. Accumulates a Gaussian kernel contribution from each point into
+    ///    every cell within 3σ (where σ = radius / 3).
+    ///
+    /// This method is `Sendable`-safe and can be called from any isolation
+    /// context.
+    ///
+    /// - Parameters:
+    ///   - points: The weighted geographic data points.
+    ///   - configuration: The parameters controlling grid size, kernel radius,
+    ///     and padding.
+    /// - Returns: A fully populated density grid.
     static func compute<P: HeatMapable>(
         from points: [P],
         configuration: HeatMapConfiguration
@@ -158,13 +213,22 @@ struct DensityGrid: Sendable {
     }
 
     /// Returns the density value at the given row and column.
+    ///
+    /// - Parameters:
+    ///   - row: The zero-based row index.
+    ///   - col: The zero-based column index.
+    /// - Returns: The density value, or `0` if the indices are out of bounds.
     func value(row: Int, col: Int) -> Double {
         guard row >= 0, row < rows, col >= 0, col < columns else { return 0 }
         return values[row * columns + col]
     }
 
-    /// Converts a grid position (fractional row, fractional column) to
-    /// a geographic coordinate.
+    /// Converts a fractional grid position to a geographic coordinate.
+    ///
+    /// - Parameters:
+    ///   - row: The fractional row position (0 = southern boundary).
+    ///   - col: The fractional column position (0 = western boundary).
+    /// - Returns: The corresponding geographic coordinate.
     func coordinate(row: Double, col: Double) -> CLLocationCoordinate2D {
         let latitude = minLatitude + row * latitudeStep
         let longitude = minLongitude + col * longitudeStep

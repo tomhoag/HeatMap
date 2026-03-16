@@ -10,7 +10,9 @@ import SwiftUI
 
 /// Pre-computed contour data for use with ``HeatMapLayer``.
 ///
-/// Use this type to compute contours off the main actor for large datasets:
+/// For large datasets, computing contours on the main actor can block the
+/// UI. Use this type to move the work off the main actor:
+///
 /// ```swift
 /// @State private var contours: HeatMapContours?
 ///
@@ -23,14 +25,35 @@ import SwiftUI
 ///     contours = HeatMapContours.compute(from: largePointArray)
 /// }
 /// ```
+///
+/// ## Topics
+///
+/// ### Computing Contours
+///
+/// - ``compute(from:configuration:)``
 public struct HeatMapContours: Sendable {
+    /// The extracted contour polygons.
     let polygons: [ContourPolygon]
+
+    /// The number of contour levels used during extraction.
     let levels: Int
+
+    /// The gradient associated with these contours.
     let gradient: HeatMapGradient
 
     /// Computes contours from the given points and configuration.
     ///
-    /// This method is safe to call from any actor context.
+    /// This method builds a ``DensityGrid``, extracts contour polygons via
+    /// the marching squares algorithm, and applies the configured polygon
+    /// smoother. It is `Sendable`-safe and can be called from any isolation
+    /// context.
+    ///
+    /// - Parameters:
+    ///   - points: The weighted geographic data points.
+    ///   - configuration: The rendering configuration. Defaults to
+    ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:smoother:)``.
+    /// - Returns: A ``HeatMapContours`` value ready to pass to
+    ///   ``HeatMapLayer/init(contours:)``.
     public static func compute<P: HeatMapable>(
         from points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
@@ -55,10 +78,10 @@ public struct HeatMapContours: Sendable {
     }
 }
 
-/// A heat map layer rendered as contour polygons inside a SwiftUI ``Map``.
+/// A heat map layer rendered as filled contour polygons inside a SwiftUI `Map`.
 ///
-/// Place this inside a `Map` content builder to display geographic data
-/// as a density visualization:
+/// Place this inside a `Map` content builder to visualize geographic density
+/// data:
 ///
 /// ```swift
 /// Map {
@@ -66,7 +89,7 @@ public struct HeatMapContours: Sendable {
 /// }
 /// ```
 ///
-/// Customize the appearance with a configuration:
+/// Customize the appearance and behavior through ``HeatMapConfiguration``:
 ///
 /// ```swift
 /// Map {
@@ -80,9 +103,29 @@ public struct HeatMapContours: Sendable {
 ///     )
 /// }
 /// ```
+///
+/// For large datasets, pre-compute contours off the main actor using
+/// ``HeatMapContours/compute(from:configuration:)`` and pass the result
+/// to ``init(contours:)``.
+///
+/// ## Topics
+///
+/// ### Creating a Layer
+///
+/// - ``init(points:configuration:)``
+/// - ``init(contours:)``
+///
+/// ### Pre-computing Contours
+///
+/// - ``HeatMapContours``
 public struct HeatMapLayer: MapContent {
+    /// The contour polygons to render.
     private let contours: [ContourPolygon]
+
+    /// The gradient used to color each contour level.
     private let gradient: HeatMapGradient
+
+    /// The total number of contour levels, used for color mapping.
     private let totalLevels: Int
 
     /// Creates a heat map layer from weighted geographic points.
@@ -92,9 +135,10 @@ public struct HeatMapLayer: MapContent {
     /// to pre-compute off the main actor.
     ///
     /// - Parameters:
-    ///   - points: The weighted geographic points to visualize.
+    ///   - points: The weighted geographic points to visualize. Must conform
+    ///     to ``HeatMapable``.
     ///   - configuration: The rendering configuration. Defaults to
-    ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:)``.
+    ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:smoother:)``.
     public init<P: HeatMapable>(
         points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
@@ -117,8 +161,11 @@ public struct HeatMapLayer: MapContent {
 
     /// Creates a heat map layer from pre-computed contours.
     ///
-    /// - Parameter contours: Pre-computed contour data from
-    ///   ``HeatMapContours/compute(from:configuration:)``.
+    /// Use this initializer with the output of
+    /// ``HeatMapContours/compute(from:configuration:)`` to avoid blocking
+    /// the main actor.
+    ///
+    /// - Parameter contours: Pre-computed contour data.
     public init(contours: HeatMapContours) {
         self.contours = contours.polygons
         self.gradient = contours.gradient
@@ -134,6 +181,9 @@ public struct HeatMapLayer: MapContent {
     }
 
     /// Maps a contour level index to a color from the gradient.
+    ///
+    /// - Parameter level: The zero-based contour level index.
+    /// - Returns: The interpolated color for the given level.
     private func colorForLevel(_ level: Int) -> Color {
         guard totalLevels > 1 else {
             return gradient.colors.first ?? .clear
@@ -142,4 +192,3 @@ public struct HeatMapLayer: MapContent {
         return gradient.color(for: fraction)
     }
 }
-

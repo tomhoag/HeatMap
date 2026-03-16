@@ -4,21 +4,38 @@
 //
 //  Created by Tom Hoag on 3/16/26.
 //
-// References: https://en.wikipedia.org/wiki/Marching_squares
+
 
 import CoreLocation
 import Foundation
 
 /// A single contour polygon at a specific density level.
+///
+/// Each polygon represents a closed region where the density exceeds
+/// the associated ``threshold``. Polygons at higher ``level`` values
+/// correspond to higher density regions and are rendered on top.
 struct ContourPolygon: Sendable, Identifiable {
+    /// A unique identifier for this polygon.
     let id: UUID
+
     /// The contour level index (0 = lowest density).
     let level: Int
+
     /// The density threshold for this contour.
     let threshold: Double
+
     /// The closed polygon vertices as geographic coordinates.
+    ///
+    /// The polygon is implicitly closed — the last vertex connects back
+    /// to the first without a duplicate closing point.
     let coordinates: [CLLocationCoordinate2D]
 
+    /// Creates a contour polygon.
+    ///
+    /// - Parameters:
+    ///   - level: The zero-based contour level index.
+    ///   - threshold: The density threshold value.
+    ///   - coordinates: The polygon vertices in geographic coordinates.
     init(level: Int, threshold: Double, coordinates: [CLLocationCoordinate2D]) {
         self.id = UUID()
         self.level = level
@@ -27,12 +44,31 @@ struct ContourPolygon: Sendable, Identifiable {
     }
 }
 
-/// The result of contour extraction: all polygons across all levels.
+/// The result of contour extraction containing all polygons across all levels.
 struct ContourResult: Sendable {
+    /// All extracted contour polygons, ordered from lowest level to highest.
     let polygons: [ContourPolygon]
 }
 
-/// Extracts contour polygons from a density grid using the marching squares algorithm.
+/// Extracts contour polygons from a ``DensityGrid`` using the marching
+/// squares algorithm.
+///
+/// The [marching squares](https://en.wikipedia.org/wiki/Marching_squares)
+/// algorithm processes each 2×2 cell of the density grid to find edges
+/// where the density crosses a threshold. These edges are assembled into
+/// closed polygon rings that represent iso-density contours.
+///
+/// Saddle cases (where diagonally opposite corners are above the threshold)
+/// are disambiguated using the cell center value.
+///
+/// Row processing is parallelized using `DispatchQueue.concurrentPerform`
+/// for performance on large grids.
+///
+/// ## Topics
+///
+/// ### Extracting Contours
+///
+/// - ``extractContours(from:levels:)``
 enum MarchingSquares {
 
     // MARK: - Public
@@ -40,10 +76,16 @@ enum MarchingSquares {
     /// Extracts contour polygons from the density grid at evenly spaced
     /// threshold levels.
     ///
+    /// The thresholds are distributed evenly between the grid's minimum
+    /// and maximum density values. For each threshold, the algorithm:
+    /// 1. Generates directed edge segments using the marching squares cases.
+    /// 2. Assembles segments into closed polygon rings.
+    /// 3. Converts ring vertices from grid space to geographic coordinates.
+    ///
     /// - Parameters:
     ///   - grid: The density grid to extract contours from.
     ///   - levels: The number of contour levels.
-    /// - Returns: A `ContourResult` containing all extracted polygons,
+    /// - Returns: A ``ContourResult`` containing all extracted polygons,
     ///   sorted from lowest level (outermost) to highest (innermost).
     static func extractContours(
         from grid: DensityGrid,
@@ -98,7 +140,9 @@ enum MarchingSquares {
     }
 
     /// Quantized key for matching segment endpoints.
-    /// Rounds to 6 decimal places to avoid floating-point mismatch.
+    ///
+    /// Rounds to 6 decimal places to avoid floating-point mismatch when
+    /// chaining segments into closed rings.
     private struct PointKey: Hashable, Sendable {
         let row: Int
         let col: Int
@@ -110,9 +154,10 @@ enum MarchingSquares {
     }
 
     /// Lookup table for the 16 marching squares cases.
-    /// Each case maps to a list of edge pairs (edgeA, edgeB).
+    ///
+    /// Each case maps to a list of edge pairs `(edgeA, edgeB)`.
     /// Edges: 0 = top, 1 = right, 2 = bottom, 3 = left.
-    /// A segment goes from the interpolated point on edgeA to edgeB.
+    /// A segment goes from the interpolated point on `edgeA` to `edgeB`.
     private static let edgeTable: [[(Int, Int)]] = [
         [],               // Case 0:  none inside
         [(3, 2)],         // Case 1:  BL
@@ -132,15 +177,23 @@ enum MarchingSquares {
         [],               // Case 15: all inside
     ]
 
-    /// Alternate edge table entries for saddle cases when disambiguated
-    /// with cell center value >= threshold.
+    /// Alternate edge table entries for saddle case 5 when the cell center
+    /// value is at or above the threshold.
     private static let saddleCase5Alt: [(Int, Int)] = [(3, 2), (1, 0)]
+
+    /// Alternate edge table entries for saddle case 10 when the cell center
+    /// value is at or above the threshold.
     private static let saddleCase10Alt: [(Int, Int)] = [(0, 1), (2, 3)]
 
     /// Generates all directed edge segments for a given threshold.
     ///
     /// Rows are processed in parallel using `DispatchQueue.concurrentPerform`.
     /// Each row writes to its own slot, so no synchronization is needed.
+    ///
+    /// - Parameters:
+    ///   - grid: The density grid.
+    ///   - threshold: The density threshold for this contour level.
+    /// - Returns: An array of directed segments.
     private static func generateSegments(
         grid: DensityGrid,
         threshold: Double
@@ -207,15 +260,16 @@ enum MarchingSquares {
         return segments
     }
 
-    /// Computes the interpolated point on a cell edge.
+    /// Computes the interpolated point on a cell edge where the density
+    /// crosses the threshold.
     ///
     /// - Parameters:
-    ///   - edge: The edge index (0=top, 1=right, 2=bottom, 3=left).
-    ///   - row: The top-left row of the 2x2 cell.
-    ///   - col: The top-left column of the 2x2 cell.
-    ///   - corners: The four corner values (tl, tr, br, bl).
+    ///   - edge: The edge index (0 = top, 1 = right, 2 = bottom, 3 = left).
+    ///   - row: The top-left row of the 2×2 cell.
+    ///   - col: The top-left column of the 2×2 cell.
+    ///   - corners: The four corner density values `(tl, tr, br, bl)`.
     ///   - threshold: The contour threshold.
-    /// - Returns: The interpolated position as a `GridPoint`.
+    /// - Returns: The interpolated position as a fractional grid point.
     private static func interpolateEdge(
         edge: Int,
         row: Int,
@@ -241,8 +295,17 @@ enum MarchingSquares {
         }
     }
 
-    /// Safe linear interpolation factor: returns `(threshold - v0) / (v1 - v0)`,
-    /// clamped to [0, 1] to avoid division by zero.
+    /// Computes a safe linear interpolation factor.
+    ///
+    /// Returns `(threshold - v0) / (v1 - v0)`, clamped to `[0, 1]`.
+    /// Returns `0.5` when `v0` and `v1` are nearly equal to avoid division
+    /// by zero.
+    ///
+    /// - Parameters:
+    ///   - threshold: The target value to interpolate toward.
+    ///   - v0: The value at one end of the edge.
+    ///   - v1: The value at the other end of the edge.
+    /// - Returns: The interpolation factor in `[0, 1]`.
     private static func safeLerp(_ threshold: Double, _ v0: Double, _ v1: Double) -> Double {
         let denom = v1 - v0
         guard abs(denom) > 1e-12 else { return 0.5 }
@@ -253,8 +316,14 @@ enum MarchingSquares {
 
     /// Assembles directed segments into closed polygon rings.
     ///
-    /// Uses a dictionary keyed by quantized start points to chain
-    /// segments together into closed rings.
+    /// Uses a dictionary keyed by quantized start points (``PointKey``) to
+    /// chain segments together. Starting from an arbitrary segment, the
+    /// algorithm follows the chain until the ring closes or no continuation
+    /// is found. Only closed rings with at least 3 vertices are kept.
+    ///
+    /// - Parameter segments: The directed segments to assemble.
+    /// - Returns: An array of closed rings, each represented as an array
+    ///   of ``GridPoint`` values (without a duplicate closing point).
     private static func assembleRings(from segments: [Segment]) -> [[GridPoint]] {
         guard !segments.isEmpty else { return [] }
 
