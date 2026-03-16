@@ -31,8 +31,8 @@ public struct HeatMapContours: Sendable {
     /// Computes contours from the given points and configuration.
     ///
     /// This method is safe to call from any actor context.
-    public static func compute(
-        from points: [HeatMapPoint],
+    public static func compute<P: HeatMapable>(
+        from points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) -> HeatMapContours {
         let grid = DensityGrid.compute(from: points, configuration: configuration)
@@ -88,8 +88,8 @@ public struct HeatMapLayer: MapContent {
     ///   - points: The weighted geographic points to visualize.
     ///   - configuration: The rendering configuration. Defaults to
     ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:)``.
-    public init(
-        points: [HeatMapPoint],
+    public init<P: HeatMapable>(
+        points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) {
         let grid = DensityGrid.compute(from: points, configuration: configuration)
@@ -132,45 +132,3 @@ public struct HeatMapLayer: MapContent {
     }
 }
 
-// MARK: - Preview
-
-#Preview {
-    @Previewable @State var position: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 37.775, longitude: -122.418),
-            span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
-        )
-    )
-
-    Map(position: $position) {
-        HeatMapLayer(
-            points: HeatMapLayer.samplePoints,
-            configuration: HeatMapConfiguration(
-                radius: 300,
-                contourLevels: 8,
-                gradient: .thermal
-            )
-        )
-    }
-}
-
-private extension HeatMapLayer {
-    /// Sample points around San Francisco for previewing.
-    static let samplePoints: [HeatMapPoint] = [
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), weight: 10),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7751, longitude: -122.4180), weight: 8),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7735, longitude: -122.4210), weight: 6),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7760, longitude: -122.4165), weight: 9),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7740, longitude: -122.4150), weight: 4),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7770, longitude: -122.4200), weight: 7),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7725, longitude: -122.4175), weight: 5),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7755, longitude: -122.4140), weight: 3),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7780, longitude: -122.4185), weight: 8),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7710, longitude: -122.4160), weight: 6),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7765, longitude: -122.4220), weight: 4),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7745, longitude: -122.4130), weight: 7),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7790, longitude: -122.4170), weight: 5),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7730, longitude: -122.4205), weight: 9),
-        HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7720, longitude: -122.4190), weight: 6),
-    ]
-}

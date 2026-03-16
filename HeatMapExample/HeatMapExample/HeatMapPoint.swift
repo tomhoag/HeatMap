@@ -4,11 +4,11 @@
 //
 //  Created by Tom Hoag on 3/16/26.
 //
-
+import HeatMap
 import CoreLocation
 
 /// A weighted geographic point for heat map rendering.
-public struct HeatMapPoint: Sendable, Identifiable {
+public struct HeatMapPoint: HeatMapable {
     public let id: UUID
     /// The geographic coordinate of this point.
     public let coordinate: CLLocationCoordinate2D

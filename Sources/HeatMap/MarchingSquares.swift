@@ -4,6 +4,7 @@
 //
 //  Created by Tom Hoag on 3/16/26.
 //
+// References: https://en.wikipedia.org/wiki/Marching_squares
 
 import CoreLocation
 import Foundation
@@ -130,6 +131,7 @@ enum MarchingSquares {
     private static let saddleCase10Alt: [(Int, Int)] = [(0, 1), (2, 3)]
 
     /// Generates all directed edge segments for a given threshold.
+    /// TODO: parallelize this!!
     private static func generateSegments(
         grid: DensityGrid,
         threshold: Double

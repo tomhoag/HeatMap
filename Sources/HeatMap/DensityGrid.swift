@@ -42,8 +42,8 @@ struct DensityGrid: Sendable {
     ///
     /// This method is nonisolated and `Sendable`-safe, suitable for
     /// calling from a background context.
-    static func compute(
-        from points: [HeatMapPoint],
+    static func compute<P: HeatMapable>(
+        from points: [P],
         configuration: HeatMapConfiguration
     ) -> DensityGrid {
         guard !points.isEmpty else {

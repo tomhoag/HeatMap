@@ -7,47 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0021F9F52F68515E005A85AD /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 0021F9F42F68515E005A85AD /* AGENTS.md */; };
-		0021FA122F685984005A85AD /* HeatMap.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0021F9EA2F685146005A85AD /* HeatMap.framework */; };
-		0021FA132F685985005A85AD /* HeatMap.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 0021F9EA2F685146005A85AD /* HeatMap.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		008D473F2F685F0000A682A5 /* HeatMap in Frameworks */ = {isa = PBXBuildFile; productRef = 008D473E2F685F0000A682A5 /* HeatMap */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		0021FA142F685985005A85AD /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0021F9E12F685146005A85AD /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0021F9E92F685146005A85AD;
-			remoteInfo = HeatMap;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		0021FA162F685985005A85AD /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				0021FA132F685985005A85AD /* HeatMap.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0021F9EA2F685146005A85AD /* HeatMap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = HeatMap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		0021F9F42F68515E005A85AD /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 		0021FA062F68592E005A85AD /* HeatMapExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HeatMapExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		0021F9EC2F685146005A85AD /* HeatMap */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = HeatMap;
-			sourceTree = "<group>";
-		};
 		0021FA072F68592E005A85AD /* HeatMapExample */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = HeatMapExample;
@@ -67,7 +35,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0021FA122F685984005A85AD /* HeatMap.framework in Frameworks */,
+				008D473F2F685F0000A682A5 /* HeatMap in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,8 +45,6 @@
 		0021F9E02F685146005A85AD = {
 			isa = PBXGroup;
 			children = (
-				0021F9F42F68515E005A85AD /* AGENTS.md */,
-				0021F9EC2F685146005A85AD /* HeatMap */,
 				0021FA072F68592E005A85AD /* HeatMapExample */,
 				0021FA112F685984005A85AD /* Frameworks */,
 				0021F9EB2F685146005A85AD /* Products */,
@@ -127,9 +93,6 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				0021F9EC2F685146005A85AD /* HeatMap */,
-			);
 			name = HeatMap;
 			packageProductDependencies = (
 			);
@@ -144,18 +107,17 @@
 				0021FA022F68592E005A85AD /* Sources */,
 				0021FA032F68592E005A85AD /* Frameworks */,
 				0021FA042F68592E005A85AD /* Resources */,
-				0021FA162F685985005A85AD /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				0021FA152F685985005A85AD /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0021FA072F68592E005A85AD /* HeatMapExample */,
 			);
 			name = HeatMapExample;
 			packageProductDependencies = (
+				008D473E2F685F0000A682A5 /* HeatMap */,
 			);
 			productName = HeatMapExample;
 			productReference = 0021FA062F68592E005A85AD /* HeatMapExample.app */;
@@ -188,6 +150,9 @@
 			);
 			mainGroup = 0021F9E02F685146005A85AD;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				008D473D2F685F0000A682A5 /* XCLocalSwiftPackageReference "../../HeatMap" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0021F9EB2F685146005A85AD /* Products */;
 			projectDirPath = "";
@@ -204,7 +169,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0021F9F52F68515E005A85AD /* AGENTS.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,14 +197,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		0021FA152F685985005A85AD /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 0021F9E92F685146005A85AD /* HeatMap */;
-			targetProxy = 0021FA142F685985005A85AD /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0021F9EF2F685146005A85AD /* Debug */ = {
@@ -555,6 +511,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		008D473D2F685F0000A682A5 /* XCLocalSwiftPackageReference "../../HeatMap" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../HeatMap;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		008D473E2F685F0000A682A5 /* HeatMap */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HeatMap;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0021F9E12F685146005A85AD /* Project object */;
 }
