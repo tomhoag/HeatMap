@@ -1,0 +1,50 @@
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# Xcode Previews
+Previews/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# OS files
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE
+*.swp
+*~
+.vscode/
+.idea/
+
+# Code signing
+*.mobileprovision
+*.provisionprofile
+
+# Secrets
+.env
+*.xcconfig.local
