@@ -131,14 +131,24 @@ enum MarchingSquares {
     private static let saddleCase10Alt: [(Int, Int)] = [(0, 1), (2, 3)]
 
     /// Generates all directed edge segments for a given threshold.
-    /// TODO: parallelize this!!
+    ///
+    /// Rows are processed in parallel using `DispatchQueue.concurrentPerform`.
+    /// Each row writes to its own slot, so no synchronization is needed.
     private static func generateSegments(
         grid: DensityGrid,
         threshold: Double
     ) -> [Segment] {
-        var segments: [Segment] = []
+        let rowCount = grid.rows - 1
+        guard rowCount > 0 else { return [] }
 
-        for row in 0..<(grid.rows - 1) {
+        // Pre-allocate one array per row to collect segments without contention.
+        // Each concurrent iteration writes only to its own index, so this is safe.
+        nonisolated(unsafe) let rowSegments = UnsafeMutableBufferPointer<[Segment]>.allocate(capacity: rowCount)
+        rowSegments.initialize(repeating: [])
+
+        DispatchQueue.concurrentPerform(iterations: rowCount) { row in
+            var localSegments: [Segment] = []
+
             for col in 0..<(grid.columns - 1) {
                 let tl = grid.value(row: row, col: col)
                 let tr = grid.value(row: row, col: col + 1)
@@ -177,11 +187,16 @@ enum MarchingSquares {
                         edge: edgeB, row: row, col: col,
                         corners: corners, threshold: threshold
                     )
-                    segments.append(Segment(start: start, end: end))
+                    localSegments.append(Segment(start: start, end: end))
                 }
             }
+
+            rowSegments[row] = localSegments
         }
 
+        let segments = Array(rowSegments).flatMap { $0 }
+        rowSegments.deinitialize()
+        rowSegments.deallocate()
         return segments
     }
 
