@@ -159,7 +159,7 @@ The repository includes **HeatMapExample**, an iOS app that demonstrates the lib
 
 ### Running the Example
 
-1. Open `HeatMapExample/HeatMapExample.xcodeproj` in Xcode.
+1. Open `HeatMapExample/HeatMap.xcodeproj` in Xcode.
 2. The project already references the local `HeatMap` package.
 3. Select an iOS simulator or device and run.
 
