@@ -32,7 +32,7 @@ enum SmootherOption: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var smoother: AnyPolygonSmoother {
+    var smoother: PolygonSmoother {
         switch self {
         case .none: .none
         case .chaikin1: .chaikin(iterations: 1)

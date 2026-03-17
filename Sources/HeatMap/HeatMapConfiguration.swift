@@ -86,9 +86,9 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// The polygon smoother applied to extracted contour polygons.
     ///
     /// Smoothing reduces the stair-step artifacts produced by the marching
-    /// squares algorithm. The default is ``AnyPolygonSmoother/chaikin(iterations:)``
+    /// squares algorithm. The default is ``PolygonSmoother/chaikin(iterations:)``
     /// with two iterations.
-    public var smoother: AnyPolygonSmoother
+    public var smoother: PolygonSmoother
 
     /// Creates a heat map configuration.
     ///
@@ -107,14 +107,14 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///   - paddingFactor: Bounding box padding as a radius multiple.
     ///     Minimum: `0`. Default: `1.5`.
     ///   - smoother: The polygon smoother. Default:
-    ///     ``AnyPolygonSmoother/chaikin(iterations:)`` with 2 iterations.
+    ///     ``PolygonSmoother/chaikin(iterations:)`` with 2 iterations.
     public init(
         radius: Double = 500,
         contourLevels: Int = 10,
         gridResolution: Int = 100,
         gradient: HeatMapGradient = .thermal,
         paddingFactor: Double = 1.5,
-        smoother: AnyPolygonSmoother = .chaikin()
+        smoother: PolygonSmoother = .chaikin()
     ) {
         self.radius = max(radius, 1)
         self.contourLevels = max(contourLevels, 1)

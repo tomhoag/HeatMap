@@ -19,10 +19,10 @@ struct PolygonSmootherTests {
         CLLocationCoordinate2D(latitude: 0, longitude: 1),
     ]
 
-    // MARK: - NullSmoother
+    // MARK: - None
 
-    @Test func nullSmootherReturnsIdenticalCoordinates() {
-        let smoother = NullSmoother()
+    @Test func noneReturnsIdenticalCoordinates() {
+        let smoother = PolygonSmoother.none
         let result = smoother.smooth(triangle)
         #expect(result.count == triangle.count)
         for (a, b) in zip(result, triangle) {
@@ -31,41 +31,43 @@ struct PolygonSmootherTests {
         }
     }
 
-    @Test func nullSmootherHandlesEmptyInput() {
-        let smoother = NullSmoother()
+    @Test func noneHandlesEmptyInput() {
+        let smoother = PolygonSmoother.none
         let result = smoother.smooth([])
         #expect(result.isEmpty)
     }
 
-    // MARK: - ChaikinSmoother
+    // MARK: - Chaikin
 
     @Test func chaikinIncreasesVertexCount() {
-        let smoother = ChaikinSmoother(iterations: 1)
+        let smoother = PolygonSmoother.chaikin(iterations: 1)
         let result = smoother.smooth(triangle)
         // 3 vertices * 2 = 6 after one pass
         #expect(result.count == triangle.count * 2)
     }
 
     @Test func chaikinTwoIterationsDoublesAgain() {
-        let smoother = ChaikinSmoother(iterations: 2)
+        let smoother = PolygonSmoother.chaikin(iterations: 2)
         let result = smoother.smooth(triangle)
         // 3 * 2 * 2 = 12 after two passes
         #expect(result.count == triangle.count * 4)
     }
 
     @Test func chaikinDefaultIterationsIsTwo() {
-        let smoother = ChaikinSmoother()
-        #expect(smoother.iterations == 2)
+        let smoother = PolygonSmoother.chaikin()
+        let result = smoother.smooth(triangle)
+        // Default is 2 iterations: 3 * 4 = 12
+        #expect(result.count == triangle.count * 4)
     }
 
     @Test func chaikinZeroIterationsReturnsOriginal() {
-        let smoother = ChaikinSmoother(iterations: 0)
+        let smoother = PolygonSmoother.chaikin(iterations: 0)
         let result = smoother.smooth(triangle)
         #expect(result.count == triangle.count)
     }
 
     @Test func chaikinWithTwoVerticesReturnsOriginal() {
-        let smoother = ChaikinSmoother(iterations: 2)
+        let smoother = PolygonSmoother.chaikin(iterations: 2)
         let twoPoints = [
             CLLocationCoordinate2D(latitude: 0, longitude: 0),
             CLLocationCoordinate2D(latitude: 1, longitude: 1),
@@ -75,7 +77,7 @@ struct PolygonSmootherTests {
     }
 
     @Test func chaikinPointsStayWithinBounds() {
-        let smoother = ChaikinSmoother(iterations: 3)
+        let smoother = PolygonSmoother.chaikin(iterations: 3)
         let result = smoother.smooth(square)
         for coord in result {
             #expect(coord.latitude >= 0 && coord.latitude <= 1)
@@ -86,7 +88,7 @@ struct PolygonSmootherTests {
     @Test func chaikinPreservesClosedShape() {
         // After smoothing, the last point's "next" wraps to the first,
         // so the polygon should still be implicitly closed.
-        let smoother = ChaikinSmoother(iterations: 2)
+        let smoother = PolygonSmoother.chaikin(iterations: 2)
         let result = smoother.smooth(square)
         // Smoothed polygon should have vertices, no duplicates at start/end
         let first = result.first!
@@ -95,86 +97,34 @@ struct PolygonSmootherTests {
         #expect(!isClosed, "Smoothed polygon should not have duplicate closing point")
     }
 
-    // MARK: - AnyPolygonSmoother
-
-    @Test func anySmootherNoneIsIdentity() {
-        let smoother = AnyPolygonSmoother.none
-        let result = smoother.smooth(triangle)
-        #expect(result.count == triangle.count)
-    }
-
-    @Test func anySmootherChaikinSmooths() {
-        let smoother = AnyPolygonSmoother.chaikin(iterations: 1)
-        let result = smoother.smooth(triangle)
-        #expect(result.count == triangle.count * 2)
-    }
-
-    @Test func anySmootherDefaultChaikinHasTwoIterations() {
-        let smoother = AnyPolygonSmoother.chaikin()
-        let result = smoother.smooth(triangle)
-        // 2 iterations: 3 * 4 = 12
-        #expect(result.count == triangle.count * 4)
-    }
-
     // MARK: - Equality
 
-    @Test func nullSmootherEquality() {
-        #expect(NullSmoother() == NullSmoother())
+    @Test func noneEqualsNone() {
+        #expect(PolygonSmoother.none == PolygonSmoother.none)
     }
 
-    @Test func chaikinSmootherEqualitySameIterations() {
-        #expect(ChaikinSmoother(iterations: 3) == ChaikinSmoother(iterations: 3))
+    @Test func chaikinEqualitySameIterations() {
+        #expect(PolygonSmoother.chaikin(iterations: 3) == PolygonSmoother.chaikin(iterations: 3))
     }
 
-    @Test func chaikinSmootherInequalityDifferentIterations() {
-        #expect(ChaikinSmoother(iterations: 2) != ChaikinSmoother(iterations: 3))
+    @Test func chaikinInequalityDifferentIterations() {
+        #expect(PolygonSmoother.chaikin(iterations: 2) != PolygonSmoother.chaikin(iterations: 3))
     }
 
-    @Test func anySmootherEqualitySameType() {
-        let a = AnyPolygonSmoother.chaikin(iterations: 2)
-        let b = AnyPolygonSmoother.chaikin(iterations: 2)
-        #expect(a == b)
-    }
-
-    @Test func anySmootherInequalityDifferentParams() {
-        let a = AnyPolygonSmoother.chaikin(iterations: 2)
-        let b = AnyPolygonSmoother.chaikin(iterations: 3)
-        #expect(a != b)
-    }
-
-    @Test func anySmootherInequalityDifferentTypes() {
-        let a = AnyPolygonSmoother.none
-        let b = AnyPolygonSmoother.chaikin()
-        #expect(a != b)
-    }
-
-    // MARK: - Custom Smoother Protocol Conformance
-
-    @Test func customSmootherViaProtocol() {
-        // A custom smoother that reverses the coordinates
-        struct ReverseSmoother: PolygonSmoother {
-            func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
-                coordinates.reversed()
-            }
-        }
-
-        let smoother = AnyPolygonSmoother(ReverseSmoother())
-        let result = smoother.smooth(triangle)
-        #expect(result.count == triangle.count)
-        #expect(result.first!.latitude == triangle.last!.latitude)
-        #expect(result.first!.longitude == triangle.last!.longitude)
+    @Test func noneNotEqualToChaikin() {
+        #expect(PolygonSmoother.none != PolygonSmoother.chaikin())
     }
 
     // MARK: - Hashable
 
-    @Test func anySmootherHashConsistency() {
-        let a = AnyPolygonSmoother.chaikin(iterations: 2)
-        let b = AnyPolygonSmoother.chaikin(iterations: 2)
+    @Test func hashConsistency() {
+        let a = PolygonSmoother.chaikin(iterations: 2)
+        let b = PolygonSmoother.chaikin(iterations: 2)
         #expect(a.hashValue == b.hashValue)
     }
 
-    @Test func anySmootherCanBeUsedInSet() {
-        let set: Set<AnyPolygonSmoother> = [
+    @Test func canBeUsedInSet() {
+        let set: Set<PolygonSmoother> = [
             .none,
             .chaikin(iterations: 1),
             .chaikin(iterations: 2),
@@ -201,14 +151,14 @@ struct PolygonSmootherTests {
     // MARK: - CustomStringConvertible
 
     @Test func descriptionForNone() {
-        #expect(String(describing: AnyPolygonSmoother.none) == "none")
+        #expect(String(describing: PolygonSmoother.none) == "none")
     }
 
     @Test func descriptionForChaikinDefault() {
-        #expect(String(describing: AnyPolygonSmoother.chaikin()) == "chaikin(2)")
+        #expect(String(describing: PolygonSmoother.chaikin()) == "chaikin(2)")
     }
 
     @Test func descriptionForChaikinCustomIterations() {
-        #expect(String(describing: AnyPolygonSmoother.chaikin(iterations: 5)) == "chaikin(5)")
+        #expect(String(describing: PolygonSmoother.chaikin(iterations: 5)) == "chaikin(5)")
     }
 }

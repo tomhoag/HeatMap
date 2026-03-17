@@ -7,192 +7,61 @@
 
 import CoreLocation
 
-/// A type that smooths a closed polygon's coordinates.
+/// A polygon smoothing algorithm applied to extracted contour polygons.
 ///
-/// Conforming types receive an array of coordinates representing a closed
-/// polygon (without a duplicate closing point) and return a smoothed version.
-///
-/// The HeatMap package includes two built-in smoothers accessible via
-/// ``AnyPolygonSmoother``:
+/// Smoothing reduces the stair-step artifacts produced by the marching
+/// squares algorithm. Use one of the built-in cases when creating a
+/// ``HeatMapConfiguration``:
 ///
 /// ```swift
 /// let config = HeatMapConfiguration(smoother: .chaikin(iterations: 3))
 /// ```
 ///
-/// You can also implement your own:
-///
-/// ```swift
-/// struct BezierSmoother: PolygonSmoother {
-///     func smooth(
-///         _ coordinates: [CLLocationCoordinate2D]
-///     ) -> [CLLocationCoordinate2D] {
-///         // Custom smoothing logic
-///     }
-/// }
-///
-/// let config = HeatMapConfiguration(
-///     smoother: AnyPolygonSmoother(BezierSmoother())
-/// )
-/// ```
-///
 /// ## Topics
 ///
-/// ### Requirements
+/// ### Smoothing Algorithms
 ///
-/// - ``smooth(_:)``
-///
-/// ### Built-in Smoothers
-///
-/// - ``AnyPolygonSmoother``
-public protocol PolygonSmoother: Sendable, Hashable {
+/// - ``none``
+/// - ``chaikin(iterations:)``
+public enum PolygonSmoother: Sendable, Hashable {
+    /// No smoothing applied. Returns coordinates unchanged.
+    case none
+
+    /// Chaikin's corner-cutting algorithm.
+    ///
+    /// Each iteration replaces every edge with two new points at the 25% and
+    /// 75% positions, doubling the vertex count per pass. The result converges
+    /// toward a quadratic B-spline curve while preserving the polygon's
+    /// overall shape.
+    ///
+    /// - Parameter iterations: The number of subdivision passes. Default: `2`.
+    ///   Values less than `1` result in no smoothing.
+    ///
+    /// - Reference: [Chaikin, G. (1974). "An algorithm for high-speed curve generation."](https://www.sciencedirect.com/science/article/abs/pii/0146664X74900288)
+    case chaikin(iterations: Int = 2)
+
     /// Smooths a closed polygon represented as an array of coordinates.
     ///
     /// The input array does **not** include a duplicate closing point —
     /// the polygon is implicitly closed (last vertex connects back to first).
-    /// The returned array should also omit the closing duplicate.
+    /// The returned array also omits the closing duplicate.
     ///
     /// - Parameter coordinates: The polygon vertices to smooth.
     /// - Returns: The smoothed polygon vertices.
-    func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D]
-}
-
-// MARK: - Type-Erased Wrapper
-
-/// A type-erased polygon smoother.
-///
-/// Use the convenience statics to configure smoothing in a
-/// ``HeatMapConfiguration``:
-///
-/// ```swift
-/// .chaikin()              // Chaikin corner-cutting, 2 iterations (default)
-/// .chaikin(iterations: 3) // 3 iterations for smoother curves
-/// .none                   // No smoothing
-/// ```
-///
-/// Wrap a custom ``PolygonSmoother`` conformance:
-///
-/// ```swift
-/// let custom = AnyPolygonSmoother(MyCustomSmoother())
-/// ```
-///
-/// `AnyPolygonSmoother` preserves `Equatable` and `Hashable` semantics
-/// of the wrapped smoother, so two wrappers are equal when their underlying
-/// smoothers are equal.
-///
-/// ## Topics
-///
-/// ### Factory Methods
-///
-/// - ``none``
-/// - ``chaikin(iterations:)``
-///
-/// ### Wrapping a Custom Smoother
-///
-/// - ``init(_:)``
-public struct AnyPolygonSmoother: PolygonSmoother {
-    private let _smooth: @Sendable ([CLLocationCoordinate2D]) -> [CLLocationCoordinate2D]
-    private let _hash: @Sendable (inout Hasher) -> Void
-    private let _equals: @Sendable (Any) -> Bool
-    private let typeID: ObjectIdentifier
-    // The wrapped smoother conforms to Sendable, but is stored as Any for equality checks.
-    nonisolated(unsafe) private let unwrapped: Any
-
-    /// Creates a type-erased smoother wrapping the given value.
-    ///
-    /// - Parameter smoother: A concrete ``PolygonSmoother`` to wrap.
-    public init<S: PolygonSmoother>(_ smoother: S) {
-        _smooth = { smoother.smooth($0) }
-        _hash = { smoother.hash(into: &$0) }
-        _equals = { other in
-            guard let other = other as? S else { return false }
-            return smoother == other
-        }
-        typeID = ObjectIdentifier(S.self)
-        unwrapped = smoother
-    }
-
-    public func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
-        _smooth(coordinates)
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(typeID)
-        _hash(&hasher)
-    }
-
-    public static func == (lhs: AnyPolygonSmoother, rhs: AnyPolygonSmoother) -> Bool {
-        guard lhs.typeID == rhs.typeID else { return false }
-        return lhs._equals(rhs.unwrapped)
-    }
-}
-
-extension AnyPolygonSmoother: CustomStringConvertible {
-    public var description: String {
-        if let chaikin = unwrapped as? ChaikinSmoother {
-            return "chaikin(\(chaikin.iterations))"
-        } else if unwrapped is NullSmoother {
-            return "none"
-        } else {
-            return String(describing: type(of: unwrapped))
+    func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
+        switch self {
+        case .none:
+            return coordinates
+        case .chaikin(let iterations):
+            return Self.chaikinSmooth(coordinates, iterations: iterations)
         }
     }
-}
 
-extension AnyPolygonSmoother {
-    /// No smoothing applied.
-    ///
-    /// Wraps a ``NullSmoother`` that returns coordinates unchanged.
-    public static let none = AnyPolygonSmoother(NullSmoother())
-
-    /// Chaikin's corner-cutting with the given number of iterations.
-    ///
-    /// Wraps a ``ChaikinSmoother``. Each iteration doubles the vertex count,
-    /// producing progressively smoother curves.
-    ///
-    /// - Parameter iterations: The number of subdivision passes. Default: `2`.
-    /// - Returns: A type-erased smoother configured for Chaikin smoothing.
-    public static func chaikin(iterations: Int = 2) -> AnyPolygonSmoother {
-        AnyPolygonSmoother(ChaikinSmoother(iterations: iterations))
-    }
-}
-
-// MARK: - Built-in Smoothers
-
-/// A smoother that applies no transformation (pass-through).
-///
-/// Returns the input coordinates unchanged. Use ``AnyPolygonSmoother/none``
-/// to access this smoother through the type-erased wrapper.
-struct NullSmoother: PolygonSmoother {
-    init() {}
-
-    func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
-        coordinates
-    }
-}
-
-/// Chaikin's corner-cutting algorithm for polygon smoothing.
-///
-/// Each iteration replaces every edge with two new points at the 25% and 75%
-/// positions, doubling the vertex count per pass. The result converges toward
-/// a quadratic B-spline curve while preserving the polygon's overall shape.
-///
-/// Use ``AnyPolygonSmoother/chaikin(iterations:)`` for convenient access
-/// in a ``HeatMapConfiguration``.
-///
-/// - Reference: [Chaikin, G. (1974). "An algorithm for high-speed curve generation.](https://www.sciencedirect.com/science/article/abs/pii/0146664X74900288)"
-struct ChaikinSmoother: PolygonSmoother {
-    /// The number of subdivision passes.
-    let iterations: Int
-
-    /// Creates a Chaikin smoother.
-    ///
-    /// - Parameter iterations: The number of subdivision passes. Default: `2`.
-    ///   Values less than `1` result in no smoothing.
-    init(iterations: Int = 2) {
-        self.iterations = iterations
-    }
-
-    func smooth(_ coordinates: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
+    /// Chaikin corner-cutting implementation.
+    private static func chaikinSmooth(
+        _ coordinates: [CLLocationCoordinate2D],
+        iterations: Int
+    ) -> [CLLocationCoordinate2D] {
         guard coordinates.count >= 3, iterations >= 1 else {
             return coordinates
         }
@@ -227,5 +96,16 @@ struct ChaikinSmoother: PolygonSmoother {
         }
 
         return points
+    }
+}
+
+extension PolygonSmoother: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .none:
+            return "none"
+        case .chaikin(let iterations):
+            return "chaikin(\(iterations))"
+        }
     }
 }
