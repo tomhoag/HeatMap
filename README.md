@@ -6,6 +6,16 @@ A Swift package for rendering geographic heat maps as filled contour polygons in
 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/tomhoag/HeatMap)
 
+## Features
+
+- **Gaussian kernel density estimation** with configurable radius and grid resolution
+- **Marching squares contour extraction** with Chaikin polygon smoothing
+- **Cooperative Task cancellation** — the async `compute` method checks for cancellation between pipeline stages (after the density grid, between contour levels, and between polygon smoothing passes), so cancelled Tasks exit early instead of running to completion
+- **Built-in color gradients** (thermal, warm, cool, monochrome) plus custom gradient support
+- **Adaptive configuration** that auto-derives radius and resolution from your data
+- **Gradient legend view** with configurable axis and label visibility
+- **Localized strings** — user-facing legend labels use `String(localized:)` so consuming apps can provide translations via their string catalogs
+
 ## Requirements
 
 - iOS 17+ / macOS 14+ / visionOS 1+
@@ -79,7 +89,7 @@ struct MyMapView: View {
             }
         }
         .task {
-            contours = await HeatMapContours.compute(from: points)
+            contours = try? await HeatMapContours.compute(from: points)
         }
     }
 }
@@ -98,7 +108,7 @@ let config = HeatMapConfiguration(
     smoother: .chaikin(iterations: 3)  // polygon smoothing
 )
 
-contours = await HeatMapContours.compute(from: points, configuration: config)
+contours = try? await HeatMapContours.compute(from: points, configuration: config)
 ```
 
 | Parameter | Default | Description |
@@ -116,7 +126,7 @@ If you don't know the geographic scale of your data in advance, let the library 
 
 ```swift
 let config = HeatMapConfiguration.adaptive(for: points)
-contours = await HeatMapContours.compute(from: points, configuration: config)
+contours = try? await HeatMapContours.compute(from: points, configuration: config)
 ```
 
 You can still override individual properties afterward:
@@ -143,7 +153,7 @@ var body: some View {
         }
     }
     .task(id: config) {
-        contours = await HeatMapContours.compute(from: points, configuration: config)
+        contours = try? await HeatMapContours.compute(from: points, configuration: config)
     }
 }
 ```
@@ -153,7 +163,7 @@ var body: some View {
 The computed contours expose their underlying polygon data for hit testing, export, or custom visualizations:
 
 ```swift
-let result = await HeatMapContours.compute(from: points)
+let result = try await HeatMapContours.compute(from: points)
 for contour in result.contours {
     print("Level \(contour.level), threshold \(contour.threshold): \(contour.coordinates.count) vertices")
 }

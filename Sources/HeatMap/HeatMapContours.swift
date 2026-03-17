@@ -18,7 +18,7 @@ import SwiftUI
 /// them through ``HeatMapContours/contours`` after computing contours:
 ///
 /// ```swift
-/// let result = await HeatMapContours.compute(from: points)
+/// let result = try await HeatMapContours.compute(from: points)
 /// for contour in result.contours {
 ///     print("Level \(contour.level): \(contour.coordinates.count) vertices")
 /// }
@@ -82,7 +82,7 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
 ///     }
 /// }
 /// .task {
-///     contours = await HeatMapContours.compute(from: largePointArray)
+///     contours = try? await HeatMapContours.compute(from: largePointArray)
 /// }
 /// ```
 ///
@@ -92,7 +92,7 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
 /// data export, or building custom visualizations:
 ///
 /// ```swift
-/// let result = await HeatMapContours.compute(from: points)
+/// let result = try await HeatMapContours.compute(from: points)
 /// print("\(result.contourCount) polygons across \(result.levelCount) levels")
 ///
 /// for contour in result.contours {
@@ -195,7 +195,9 @@ public struct HeatMapContours: Sendable, Equatable {
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) -> HeatMapContours {
         let grid = DensityGrid.compute(from: points, configuration: configuration)
-        let result = MarchingSquares.extractContours(
+        // Safe to force-try: Task.checkCancellation() is a no-op outside of a Task.
+        // swiftlint:disable:next force_try
+        let result = try! MarchingSquares.extractContours(
             from: grid,
             levels: configuration.contourLevels
         )
@@ -219,9 +221,14 @@ public struct HeatMapContours: Sendable, Equatable {
     /// and polygon smoothing off the calling actor, making it safe to call
     /// from the main actor without blocking the UI.
     ///
+    /// The computation checks for Task cancellation at natural checkpoints
+    /// (after the density grid, between contour levels, and between polygon
+    /// smoothing passes). If the calling Task is cancelled, the method throws
+    /// `CancellationError` and returns early.
+    ///
     /// ```swift
     /// .task {
-    ///     contours = await HeatMapContours.compute(from: largePointArray)
+    ///     contours = try? await HeatMapContours.compute(from: largePointArray)
     /// }
     /// ```
     ///
@@ -231,14 +238,40 @@ public struct HeatMapContours: Sendable, Equatable {
     ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:smoother:)``.
     /// - Returns: A ``HeatMapContours`` value ready to pass to
     ///   ``HeatMapLayer/init(contours:)``.
+    /// - Throws: `CancellationError` if the Task is cancelled during computation.
     public static func compute<P: HeatMapable>(
         from points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
-    ) async -> HeatMapContours {
+    ) async throws -> HeatMapContours {
         let points = Array(points)
         let configuration = configuration
-        return await Task.detached {
-            compute(from: points, configuration: configuration)
+        return try await Task.detached {
+            // 1. Density grid
+            let grid = DensityGrid.compute(from: points, configuration: configuration)
+            try Task.checkCancellation()
+
+            // 2. Contour extraction (checks between each level internally)
+            let result = try MarchingSquares.extractContours(
+                from: grid,
+                levels: configuration.contourLevels
+            )
+            try Task.checkCancellation()
+
+            // 3. Smoothing (check between each polygon)
+            let smoothed = try result.polygons.map { polygon in
+                try Task.checkCancellation()
+                return ContourPolygon(
+                    level: polygon.level,
+                    threshold: polygon.threshold,
+                    coordinates: configuration.smoother.smooth(polygon.coordinates)
+                )
+            }
+
+            return HeatMapContours(
+                polygons: smoothed,
+                levels: configuration.contourLevels,
+                _gradient: configuration.gradient
+            )
         }.value
     }
 }

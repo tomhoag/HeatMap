@@ -65,7 +65,7 @@ struct ContentView: View {
         }
         .task(id: configuration) {
             guard !points.isEmpty else { return }
-            contours = await HeatMapContours.compute(
+            contours = try? await HeatMapContours.compute(
                 from: points,
                 configuration: configuration
             )

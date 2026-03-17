@@ -27,7 +27,7 @@ extension HeatMapConfiguration {
     ///
     /// ```swift
     /// let config = HeatMapConfiguration.adaptive(for: points)
-    /// let contours = await HeatMapContours.compute(from: points, configuration: config)
+    /// let contours = try await HeatMapContours.compute(from: points, configuration: config)
     /// ```
     ///
     /// Because the returned properties are `var`, you can override

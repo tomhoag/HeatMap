@@ -90,7 +90,7 @@ enum MarchingSquares {
     static func extractContours(
         from grid: DensityGrid,
         levels: Int
-    ) -> ContourResult {
+    ) throws -> ContourResult {
         guard grid.rows > 1, grid.columns > 1, levels > 0 else {
             return ContourResult(polygons: [])
         }
@@ -103,6 +103,7 @@ enum MarchingSquares {
         var allPolygons: [ContourPolygon] = []
 
         for level in 0..<levels {
+            try Task.checkCancellation()
             let fraction = Double(level + 1) / Double(levels + 1)
             let threshold = grid.minDensity + range * fraction
 

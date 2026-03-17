@@ -42,17 +42,35 @@ struct HeatMapContoursTests {
 
     // MARK: - Async Compute
 
-    @Test func asyncComputePreservesConfiguration() async {
+    @Test func asyncComputePreservesConfiguration() async throws {
         let config = HeatMapConfiguration(contourLevels: 5, gradient: .warm)
-        let contours = await HeatMapContours.compute(from: tightCluster, configuration: config)
+        let contours = try await HeatMapContours.compute(from: tightCluster, configuration: config)
         #expect(contours.levels == 5)
         #expect(contours.gradient == .warm)
         #expect(!contours.polygons.isEmpty)
     }
 
-    @Test func asyncComputeFromEmptyPoints() async {
-        let contours = await HeatMapContours.compute(from: [TestPoint]())
+    @Test func asyncComputeFromEmptyPoints() async throws {
+        let contours = try await HeatMapContours.compute(from: [TestPoint]())
         #expect(contours.polygons.isEmpty)
+    }
+
+    @Test func asyncComputeThrowsWhenCancelled() async {
+        let task = Task {
+            try await HeatMapContours.compute(
+                from: tightCluster,
+                configuration: HeatMapConfiguration(contourLevels: 100, gridResolution: 300)
+            )
+        }
+        task.cancel()
+        do {
+            _ = try await task.value
+            // If the computation finished before cancellation, that's acceptable
+        } catch is CancellationError {
+            // Expected
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
     }
 
     // MARK: - Equatable

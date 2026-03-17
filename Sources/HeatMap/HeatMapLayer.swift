@@ -23,7 +23,7 @@ import SwiftUI
 ///     }
 /// }
 /// .task {
-///     contours = await HeatMapContours.compute(
+///     contours = try? await HeatMapContours.compute(
 ///         from: myPoints,
 ///         configuration: HeatMapConfiguration(
 ///             radius: 300,
