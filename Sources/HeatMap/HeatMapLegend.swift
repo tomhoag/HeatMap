@@ -274,11 +274,11 @@ public struct HeatMapLegend: View {
             if let thresholds, let first = thresholds.first {
                 return formatThreshold(first)
             }
-            return "Low"
+            return String(localized: "Low", comment: "Heat map legend label for the low/minimum end of the scale")
         case .customLowHigh(let low, _):
             return low
         default:
-            return "Low"
+            return String(localized: "Low", comment: "Heat map legend label for the low/minimum end of the scale")
         }
     }
 
@@ -288,11 +288,11 @@ public struct HeatMapLegend: View {
             if let thresholds, let last = thresholds.last {
                 return formatThreshold(last)
             }
-            return "High"
+            return String(localized: "High", comment: "Heat map legend label for the high/maximum end of the scale")
         case .customLowHigh(_, let high):
             return high
         default:
-            return "High"
+            return String(localized: "High", comment: "Heat map legend label for the high/maximum end of the scale")
         }
     }
 
