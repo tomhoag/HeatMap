@@ -113,16 +113,18 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
 /// - ``contourCount``
 /// - ``levelCount``
 /// - ``gradient``
+/// - ``fillOpacity``
 ///
 /// ### Contour Data
 ///
 /// - ``HeatMapPolygon``
 public struct HeatMapContours: Sendable, Equatable {
     /// Two contour results are equal when they have the same level count,
-    /// gradient, and polygon identities (in order).
+    /// gradient, fill opacity, and polygon identities (in order).
     public static func == (lhs: HeatMapContours, rhs: HeatMapContours) -> Bool {
         lhs.levels == rhs.levels
             && lhs._gradient == rhs._gradient
+            && lhs._fillOpacity == rhs._fillOpacity
             && lhs.polygons.count == rhs.polygons.count
             && zip(lhs.polygons, rhs.polygons).allSatisfy { $0.id == $1.id }
     }
@@ -135,6 +137,9 @@ public struct HeatMapContours: Sendable, Equatable {
 
     /// The gradient used during computation (internal storage).
     let _gradient: HeatMapGradient
+
+    /// The fill opacity used during computation (internal storage).
+    let _fillOpacity: Double
 
     /// The contour polygons as ``HeatMapPolygon`` values.
     ///
@@ -177,6 +182,14 @@ public struct HeatMapContours: Sendable, Equatable {
     /// polygons.
     public var gradient: HeatMapGradient { _gradient }
 
+    /// The fill opacity associated with these contours.
+    ///
+    /// This is the ``HeatMapConfiguration/fillOpacity`` value that was
+    /// specified in the configuration used during computation. It is used
+    /// by ``HeatMapLayer/init(contours:)`` to set the opacity of rendered
+    /// polygons.
+    public var fillOpacity: Double { _fillOpacity }
+
     /// Computes contours from the given points and configuration.
     ///
     /// This method builds a ``DensityGrid``, extracts contour polygons via
@@ -211,7 +224,8 @@ public struct HeatMapContours: Sendable, Equatable {
         return HeatMapContours(
             polygons: smoothed,
             levels: configuration.contourLevels,
-            _gradient: configuration.gradient
+            _gradient: configuration.gradient,
+            _fillOpacity: configuration.fillOpacity
         )
     }
 
@@ -270,7 +284,8 @@ public struct HeatMapContours: Sendable, Equatable {
             return HeatMapContours(
                 polygons: smoothed,
                 levels: configuration.contourLevels,
-                _gradient: configuration.gradient
+                _gradient: configuration.gradient,
+                _fillOpacity: configuration.fillOpacity
             )
         }.value
     }

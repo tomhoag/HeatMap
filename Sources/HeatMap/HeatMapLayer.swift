@@ -53,6 +53,9 @@ public struct HeatMapLayer: MapContent {
     /// The total number of contour levels, used for color mapping.
     private let totalLevels: Int
 
+    /// The fill opacity applied to each polygon.
+    private let fillOpacity: Double
+
     /// Creates a heat map layer from pre-computed contours.
     ///
     /// Use ``HeatMapContours/compute(from:configuration:)-swift.type.method``
@@ -63,6 +66,7 @@ public struct HeatMapLayer: MapContent {
         self.contours = contours.polygons
         self.gradient = contours._gradient
         self.totalLevels = contours.levels
+        self.fillOpacity = contours._fillOpacity
     }
 
     @MainActor
@@ -73,15 +77,19 @@ public struct HeatMapLayer: MapContent {
         }
     }
 
-    /// Maps a contour level index to a color from the gradient.
+    /// Maps a contour level index to a color from the gradient, with
+    /// the configured fill opacity applied.
     ///
     /// - Parameter level: The zero-based contour level index.
     /// - Returns: The interpolated color for the given level.
     private func colorForLevel(_ level: Int) -> Color {
-        guard totalLevels > 1 else {
-            return gradient.colors.first ?? .clear
+        let color: Color
+        if totalLevels > 1 {
+            let fraction = Double(level) / Double(totalLevels - 1)
+            color = gradient.color(for: fraction)
+        } else {
+            color = gradient.colors.first ?? .clear
         }
-        let fraction = Double(level) / Double(totalLevels - 1)
-        return gradient.color(for: fraction)
+        return color.opacity(fillOpacity)
     }
 }

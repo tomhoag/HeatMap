@@ -62,6 +62,7 @@ struct ControlPanel: View {
     @Binding var radius: Double
     @Binding var contourLevels: Double
     @Binding var selectedGradient: GradientOption
+    @Binding var fillOpacity: Double
     @Binding var selectedSmoother: SmootherOption
     @Binding var legendAxis: Axis
     @Binding var legendLabels: HeatMapLegend.LabelVisibility
@@ -110,6 +111,10 @@ struct ControlPanel: View {
 
                 LabeledContent("Levels: \(Int(contourLevels))") {
                     Slider(value: $contourLevels, in: 3...20, step: 1)
+                }
+
+                LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
+                    Slider(value: $fillOpacity, in: 0...1, step: 0.05)
                 }
             }
 

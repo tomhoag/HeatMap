@@ -10,6 +10,7 @@ struct HeatMapConfigurationTests {
         #expect(config.gridResolution == 100)
         #expect(config.gradient == .thermal)
         #expect(config.paddingFactor == 1.5)
+        #expect(config.fillOpacity == 1.0)
     }
 
     @Test func customInitialization() {
@@ -18,13 +19,15 @@ struct HeatMapConfigurationTests {
             contourLevels: 5,
             gridResolution: 50,
             gradient: .warm,
-            paddingFactor: 2.0
+            paddingFactor: 2.0,
+            fillOpacity: 0.7
         )
         #expect(config.radius == 300)
         #expect(config.contourLevels == 5)
         #expect(config.gridResolution == 50)
         #expect(config.gradient == .warm)
         #expect(config.paddingFactor == 2.0)
+        #expect(config.fillOpacity == 0.7)
     }
 
     @Test func partialCustomInitialization() {
@@ -34,6 +37,7 @@ struct HeatMapConfigurationTests {
         #expect(config.gridResolution == 100)
         #expect(config.gradient == .thermal)
         #expect(config.paddingFactor == 1.5)
+        #expect(config.fillOpacity == 1.0)
     }
 
     @Test func hashableEquality() {
@@ -88,6 +92,16 @@ struct HeatMapConfigurationTests {
         #expect(config.paddingFactor == 0)
     }
 
+    @Test func fillOpacityClampsToMinimum() {
+        let config = HeatMapConfiguration(fillOpacity: -0.5)
+        #expect(config.fillOpacity == 0)
+    }
+
+    @Test func fillOpacityClampsToMaximum() {
+        let config = HeatMapConfiguration(fillOpacity: 2.0)
+        #expect(config.fillOpacity == 1.0)
+    }
+
     // MARK: - CustomStringConvertible
 
     @Test func descriptionContainsAllFields() {
@@ -98,6 +112,7 @@ struct HeatMapConfigurationTests {
         #expect(desc.contains("grid: 100"))
         #expect(desc.contains("gradient: HeatMapGradient.thermal"))
         #expect(desc.contains("padding: 1.5"))
+        #expect(desc.contains("fillOpacity: 1.0"))
         #expect(desc.contains("smoother: chaikin(2)"))
     }
 
@@ -107,6 +122,7 @@ struct HeatMapConfigurationTests {
             contourLevels: 5,
             gridResolution: 50,
             gradient: .cool,
+            fillOpacity: 0.5,
             smoother: .none
         )
         let desc = String(describing: config)
@@ -114,6 +130,7 @@ struct HeatMapConfigurationTests {
         #expect(desc.contains("levels: 5"))
         #expect(desc.contains("grid: 50"))
         #expect(desc.contains("gradient: HeatMapGradient.cool"))
+        #expect(desc.contains("fillOpacity: 0.5"))
         #expect(desc.contains("smoother: none"))
     }
 }

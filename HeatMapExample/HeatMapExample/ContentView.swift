@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var radius: Double = 500
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
+    @State private var fillOpacity: Double = 1.0
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
     @State private var legendLabels: HeatMapLegend.LabelVisibility = .thresholds
@@ -43,6 +44,7 @@ struct ContentView: View {
             contourLevels: Int(contourLevels),
             gridResolution: 120,
             gradient: selectedGradient.gradient,
+            fillOpacity: fillOpacity,
             smoother: selectedSmoother.smoother
         )
     }
@@ -94,6 +96,7 @@ struct ContentView: View {
                             radius: $radius,
                             contourLevels: $contourLevels,
                             selectedGradient: $selectedGradient,
+                            fillOpacity: $fillOpacity,
                             selectedSmoother: $selectedSmoother,
                             legendAxis: $legendAxis,
                             legendLabels: $legendLabels,
