@@ -68,30 +68,32 @@ struct ContourResult: Sendable {
 ///
 /// ### Extracting Contours
 ///
-/// - ``extractContours(from:levels:)``
+/// - ``extractContours(from:thresholds:)``
 enum MarchingSquares {
 
     // MARK: - Public
 
-    /// Extracts contour polygons from the density grid at evenly spaced
-    /// threshold levels.
+    /// Extracts contour polygons from the density grid at the given
+    /// thresholds.
     ///
-    /// The thresholds are distributed evenly between the grid's minimum
-    /// and maximum density values. For each threshold, the algorithm:
+    /// For each threshold, the algorithm:
     /// 1. Generates directed edge segments using the marching squares cases.
     /// 2. Assembles segments into closed polygon rings.
     /// 3. Converts ring vertices from grid space to geographic coordinates.
     ///
+    /// The level index for each polygon is derived from its position in the
+    /// thresholds array (0-based).
+    ///
     /// - Parameters:
     ///   - grid: The density grid to extract contours from.
-    ///   - levels: The number of contour levels.
+    ///   - thresholds: The density threshold values, sorted ascending.
     /// - Returns: A ``ContourResult`` containing all extracted polygons,
     ///   sorted from lowest level (outermost) to highest (innermost).
     static func extractContours(
         from grid: DensityGrid,
-        levels: Int
+        thresholds: [Double]
     ) throws -> ContourResult {
-        guard grid.rows > 1, grid.columns > 1, levels > 0 else {
+        guard grid.rows > 1, grid.columns > 1, !thresholds.isEmpty else {
             return ContourResult(polygons: [])
         }
 
@@ -102,10 +104,8 @@ enum MarchingSquares {
 
         var allPolygons: [ContourPolygon] = []
 
-        for level in 0..<levels {
+        for (level, threshold) in thresholds.enumerated() {
             try Task.checkCancellation()
-            let fraction = Double(level + 1) / Double(levels + 1)
-            let threshold = grid.minDensity + range * fraction
 
             let segments = generateSegments(grid: grid, threshold: threshold)
             let rings = assembleRings(from: segments)

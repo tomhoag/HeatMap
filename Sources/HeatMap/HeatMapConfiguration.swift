@@ -38,6 +38,7 @@ import Foundation
 /// ### Contours
 ///
 /// - ``contourLevels``
+/// - ``levelSpacing``
 /// - ``gridResolution``
 /// - ``smoother``
 ///
@@ -64,7 +65,21 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///
     /// More levels produce a smoother visual gradient but generate more
     /// polygons, which may affect rendering performance. The default is `10`.
+    ///
+    /// When ``levelSpacing`` is ``LevelSpacing/custom(_:)`` with a non-empty
+    /// array, this value is overridden by the threshold count.
     public var contourLevels: Int
+
+    /// The threshold spacing strategy for contour levels.
+    ///
+    /// Controls how density thresholds are distributed between the grid's
+    /// minimum and maximum values. The default is ``LevelSpacing/linear``,
+    /// which spaces thresholds evenly.
+    ///
+    /// When set to ``LevelSpacing/custom(_:)``, the
+    /// ``contourLevels`` value is derived from the number of provided
+    /// thresholds and does not need to be set separately.
+    public var levelSpacing: LevelSpacing
 
     /// The resolution of the density grid along its longer axis.
     ///
@@ -117,7 +132,10 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///   - radius: The Gaussian kernel radius in meters. Minimum: `1`.
     ///     Default: `500`.
     ///   - contourLevels: The number of contour levels. Minimum: `1`.
-    ///     Default: `10`.
+    ///     Default: `10`. Overridden by the threshold count when
+    ///     `levelSpacing` is ``LevelSpacing/custom(_:)``.
+    ///   - levelSpacing: The threshold spacing strategy. Default:
+    ///     ``LevelSpacing/linear``.
     ///   - gridResolution: Grid cells along the longer axis. Minimum: `2`.
     ///     Default: `100`.
     ///   - gradient: The color gradient. Default: ``HeatMapGradient/thermal``.
@@ -131,6 +149,7 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     public init(
         radius: Double = 500,
         contourLevels: Int = 10,
+        levelSpacing: LevelSpacing = .linear,
         gridResolution: Int = 100,
         gradient: HeatMapGradient = .thermal,
         paddingFactor: Double = 1.5,
@@ -140,6 +159,10 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ) {
         self.radius = max(radius, 1)
         self.contourLevels = max(contourLevels, 1)
+        self.levelSpacing = levelSpacing
+        if case .custom(let thresholds) = levelSpacing, !thresholds.isEmpty {
+            self.contourLevels = thresholds.count
+        }
         self.gridResolution = max(gridResolution, 2)
         self.gradient = gradient
         self.paddingFactor = max(paddingFactor, 0)
@@ -151,6 +174,6 @@ public struct HeatMapConfiguration: Sendable, Hashable {
 
 extension HeatMapConfiguration: CustomStringConvertible {
     public var description: String {
-        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), stroke: \(stroke), smoother: \(smoother))"
+        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), spacing: \(levelSpacing), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), stroke: \(stroke), smoother: \(smoother))"
     }
 }

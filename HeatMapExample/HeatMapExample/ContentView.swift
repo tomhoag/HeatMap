@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var selectedGradient: GradientOption = .thermal
     @State private var fillOpacity: Double = 1.0
     @State private var selectedStroke: StrokeOption = .none
+    @State private var selectedSpacing: SpacingOption = .linear
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
     @State private var legendLabels: HeatMapLegend.LabelVisibility = .thresholds
@@ -43,6 +44,7 @@ struct ContentView: View {
         HeatMapConfiguration(
             radius: radius,
             contourLevels: Int(contourLevels),
+            levelSpacing: selectedSpacing.spacing,
             gridResolution: 120,
             gradient: selectedGradient.gradient,
             fillOpacity: fillOpacity,
@@ -100,6 +102,7 @@ struct ContentView: View {
                             selectedGradient: $selectedGradient,
                             fillOpacity: $fillOpacity,
                             selectedStroke: $selectedStroke,
+                            selectedSpacing: $selectedSpacing,
                             selectedSmoother: $selectedSmoother,
                             legendAxis: $legendAxis,
                             legendLabels: $legendLabels,

@@ -60,6 +60,20 @@ enum StrokeOption: String, CaseIterable, Identifiable {
     }
 }
 
+enum SpacingOption: String, CaseIterable, Identifiable {
+    case linear = "Linear"
+    case logarithmic = "Logarithmic"
+
+    var id: String { rawValue }
+
+    var spacing: LevelSpacing {
+        switch self {
+        case .linear: .linear
+        case .logarithmic: .logarithmic
+        }
+    }
+}
+
 enum LabelVisibilityOption: String, CaseIterable, Identifiable {
     case thresholds = "Thresholds"
     case lowHigh = "Low/High"
@@ -82,6 +96,7 @@ struct ControlPanel: View {
     @Binding var selectedGradient: GradientOption
     @Binding var fillOpacity: Double
     @Binding var selectedStroke: StrokeOption
+    @Binding var selectedSpacing: SpacingOption
     @Binding var selectedSmoother: SmootherOption
     @Binding var legendAxis: Axis
     @Binding var legendLabels: HeatMapLegend.LabelVisibility
@@ -138,6 +153,13 @@ struct ControlPanel: View {
                 LabeledContent("Levels: \(Int(contourLevels))") {
                     Slider(value: $contourLevels, in: 3...20, step: 1)
                 }
+
+                Picker("Spacing", selection: $selectedSpacing) {
+                    ForEach(SpacingOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
 
                 LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
                     Slider(value: $fillOpacity, in: 0...1, step: 0.05)

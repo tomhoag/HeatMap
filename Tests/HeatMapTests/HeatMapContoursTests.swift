@@ -166,4 +166,34 @@ struct HeatMapContoursTests {
         )
         #expect(first != different)
     }
+
+    // MARK: - LevelSpacing
+
+    @Test func computeWithLogarithmicSpacing() {
+        let config = HeatMapConfiguration(levelSpacing: .logarithmic)
+        let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
+        #expect(!contours.polygons.isEmpty)
+    }
+
+    @Test func computeWithCustomThresholds() {
+        // Compute once to find the density range
+        let baseline = HeatMapContours.compute(from: tightCluster)
+        guard let first = baseline.polygons.first else {
+            Issue.record("Expected at least one polygon")
+            return
+        }
+        // Use a threshold known to be within the density range
+        let config = HeatMapConfiguration(levelSpacing: .custom([first.threshold]))
+        let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
+        #expect(!contours.polygons.isEmpty)
+        #expect(contours.levels == 1)
+    }
+
+    @Test func computeWithCustomThresholdsAllOutOfRange() {
+        // Use thresholds far outside any reasonable density range
+        let config = HeatMapConfiguration(levelSpacing: .custom([1e10, 1e11]))
+        let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
+        #expect(contours.polygons.isEmpty)
+        #expect(contours.levels == 0)
+    }
 }

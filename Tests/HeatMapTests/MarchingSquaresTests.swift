@@ -6,11 +6,20 @@ struct MarchingSquaresTests {
 
     let defaultConfig = HeatMapConfiguration()
 
+    /// Generates linearly spaced thresholds matching the old `levels:` behavior.
+    private func linearThresholds(for grid: DensityGrid, levels: Int) -> [Double] {
+        LevelSpacing.linear.resolveThresholds(
+            levels: levels,
+            minDensity: grid.minDensity,
+            maxDensity: grid.maxDensity
+        )
+    }
+
     // MARK: - Empty / Degenerate Input
 
     @Test func emptyGridReturnsNoPolygons() throws {
         let grid = DensityGrid.compute(from: [TestPoint](), configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         #expect(result.polygons.isEmpty)
     }
 
@@ -24,7 +33,7 @@ struct MarchingSquaresTests {
             latitudeStep: 1.0, longitudeStep: 1.0,
             minDensity: 1, maxDensity: 1
         )
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         #expect(result.polygons.isEmpty)
     }
 
@@ -37,13 +46,13 @@ struct MarchingSquaresTests {
             latitudeStep: 1.0, longitudeStep: 1.0,
             minDensity: 5, maxDensity: 5
         )
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         #expect(result.polygons.isEmpty)
     }
 
-    @Test func zeroLevelsReturnsNoPolygons() throws {
+    @Test func emptyThresholdsReturnsNoPolygons() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 0)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: [])
         #expect(result.polygons.isEmpty)
     }
 
@@ -51,13 +60,13 @@ struct MarchingSquaresTests {
 
     @Test func singleLevelProducesPolygons() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 1)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 1))
         #expect(!result.polygons.isEmpty)
     }
 
     @Test func multiLevelProducesPolygonsAtMultipleLevels() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         let distinctLevels = Set(result.polygons.map(\.level))
         #expect(distinctLevels.count > 1)
     }
@@ -66,7 +75,7 @@ struct MarchingSquaresTests {
 
     @Test func polygonsHaveAtLeastThreeCoordinates() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         for polygon in result.polygons {
             #expect(polygon.coordinates.count >= 3)
         }
@@ -74,7 +83,7 @@ struct MarchingSquaresTests {
 
     @Test func polygonCoordinatesAreGeographic() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         for polygon in result.polygons {
             for coord in polygon.coordinates {
                 #expect(coord.latitude >= -90 && coord.latitude <= 90)
@@ -86,7 +95,8 @@ struct MarchingSquaresTests {
     @Test func polygonLevelsAreInRange() throws {
         let levels = 5
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: levels)
+        let thresholds = linearThresholds(for: grid, levels: levels)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: thresholds)
         for polygon in result.polygons {
             #expect(polygon.level >= 0 && polygon.level < levels)
         }
@@ -94,7 +104,7 @@ struct MarchingSquaresTests {
 
     @Test func polygonThresholdsAreOrdered() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
 
         // Group thresholds by level
         var thresholdByLevel: [Int: Double] = [:]
@@ -112,7 +122,7 @@ struct MarchingSquaresTests {
 
     @Test func thresholdsBetweenMinAndMax() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         for polygon in result.polygons {
             #expect(polygon.threshold > grid.minDensity)
             #expect(polygon.threshold < grid.maxDensity)
@@ -123,8 +133,8 @@ struct MarchingSquaresTests {
 
     @Test func moreLevelsProduceMoreOrEqualPolygons() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let resultFew = try MarchingSquares.extractContours(from: grid, levels: 3)
-        let resultMany = try MarchingSquares.extractContours(from: grid, levels: 10)
+        let resultFew = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 3))
+        let resultMany = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 10))
         #expect(resultMany.polygons.count >= resultFew.polygons.count)
     }
 
@@ -132,7 +142,7 @@ struct MarchingSquaresTests {
 
     @Test func contourPolygonsHaveUniqueIDs() throws {
         let grid = DensityGrid.compute(from: tightCluster, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         let ids = Set(result.polygons.map(\.id))
         #expect(ids.count == result.polygons.count)
     }
@@ -141,7 +151,7 @@ struct MarchingSquaresTests {
 
     @Test func contoursFromSeparatedClusters() throws {
         let grid = DensityGrid.compute(from: separatedClusters, configuration: defaultConfig)
-        let result = try MarchingSquares.extractContours(from: grid, levels: 5)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 5))
         // Two separated clusters should produce multiple polygons at the same level
         #expect(!result.polygons.isEmpty)
     }
@@ -162,7 +172,7 @@ struct MarchingSquaresTests {
             latitudeStep: 0.5, longitudeStep: 0.5,
             minDensity: 0, maxDensity: 10
         )
-        let result = try MarchingSquares.extractContours(from: grid, levels: 1)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 1))
         #expect(!result.polygons.isEmpty)
         // The single contour should surround the center cell
         #expect(result.polygons[0].coordinates.count >= 3)
@@ -185,7 +195,7 @@ struct MarchingSquaresTests {
             latitudeStep: 0.25, longitudeStep: 0.25,
             minDensity: 0, maxDensity: 8
         )
-        let result = try MarchingSquares.extractContours(from: grid, levels: 3)
+        let result = try MarchingSquares.extractContours(from: grid, thresholds: linearThresholds(for: grid, levels: 3))
         #expect(!result.polygons.isEmpty)
         // Each polygon should be closed (first ≈ last coordinate not required
         // since assembleRings removes the closing duplicate, but should have ≥ 3 vertices)

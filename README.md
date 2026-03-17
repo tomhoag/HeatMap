@@ -116,6 +116,7 @@ contours = try? await HeatMapContours.compute(from: points, configuration: confi
 |-----------|---------|-------------|
 | `radius` | `500` | Gaussian kernel radius in meters. Larger values produce smoother, more diffuse maps. |
 | `contourLevels` | `10` | Number of contour bands. More levels produce a finer gradient. |
+| `levelSpacing` | `.linear` | Threshold spacing strategy (`.linear`, `.logarithmic`, or `.custom([Double])`). |
 | `gridResolution` | `100` | Grid cells along the longer axis. Higher values increase detail and computation time. |
 | `gradient` | `.thermal` | Color gradient for mapping density to color. |
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
@@ -141,7 +142,21 @@ config.gradient = .cool
 
 **Note:** The adaptive configuration is a snapshot of the current point set. If points change dynamically, you must call `adaptive(for:)` again, which may shift the radius or resolution and cause a visual discontinuity. For stable visuals with dynamic data, prefer setting configuration values explicitly.
 
-### 5. Recompute When Configuration Changes
+### 5. Contour Level Spacing
+
+By default thresholds are evenly spaced across the density range. For data with long-tail distributions (population density, precipitation, seismic activity), logarithmic spacing concentrates more contour levels in the lower-density region:
+
+```swift
+let config = HeatMapConfiguration(levelSpacing: .logarithmic)
+```
+
+You can also provide explicit threshold values. Values outside the computed density range are automatically filtered out:
+
+```swift
+let config = HeatMapConfiguration(levelSpacing: .custom([0.1, 0.5, 1.0, 5.0, 10.0]))
+```
+
+### 6. Recompute When Configuration Changes
 
 Use `.task(id:)` to recompute contours whenever the configuration changes:
 
@@ -161,7 +176,7 @@ var body: some View {
 }
 ```
 
-### 6. Access Contour Geometry
+### 7. Access Contour Geometry
 
 The computed contours expose their underlying polygon data for hit testing, export, or custom visualizations:
 
@@ -172,7 +187,7 @@ for contour in result.contours {
 }
 ```
 
-### 7. Add a Gradient Legend
+### 8. Add a Gradient Legend
 
 Display a legend showing the color scale alongside the map:
 

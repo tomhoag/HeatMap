@@ -8,6 +8,7 @@ struct HeatMapConfigurationTests {
         let config = HeatMapConfiguration()
         #expect(config.radius == 500)
         #expect(config.contourLevels == 10)
+        #expect(config.levelSpacing == .linear)
         #expect(config.gridResolution == 100)
         #expect(config.gradient == .thermal)
         #expect(config.paddingFactor == 1.5)
@@ -19,6 +20,7 @@ struct HeatMapConfigurationTests {
         let config = HeatMapConfiguration(
             radius: 300,
             contourLevels: 5,
+            levelSpacing: .logarithmic,
             gridResolution: 50,
             gradient: .warm,
             paddingFactor: 2.0,
@@ -27,6 +29,7 @@ struct HeatMapConfigurationTests {
         )
         #expect(config.radius == 300)
         #expect(config.contourLevels == 5)
+        #expect(config.levelSpacing == .logarithmic)
         #expect(config.gridResolution == 50)
         #expect(config.gradient == .warm)
         #expect(config.paddingFactor == 2.0)
@@ -107,6 +110,37 @@ struct HeatMapConfigurationTests {
         #expect(config.fillOpacity == 1.0)
     }
 
+    // MARK: - LevelSpacing
+
+    @Test func customSpacingOverridesContourLevels() {
+        let config = HeatMapConfiguration(
+            contourLevels: 10,
+            levelSpacing: .custom([1.0, 2.0, 3.0])
+        )
+        #expect(config.contourLevels == 3)
+        #expect(config.levelSpacing == .custom([1.0, 2.0, 3.0]))
+    }
+
+    @Test func emptyCustomSpacingKeepsContourLevels() {
+        let config = HeatMapConfiguration(
+            contourLevels: 10,
+            levelSpacing: .custom([])
+        )
+        #expect(config.contourLevels == 10)
+    }
+
+    @Test func levelSpacingHashableEquality() {
+        let a = HeatMapConfiguration(levelSpacing: .logarithmic)
+        let b = HeatMapConfiguration(levelSpacing: .logarithmic)
+        #expect(a == b)
+    }
+
+    @Test func levelSpacingHashableInequality() {
+        let a = HeatMapConfiguration(levelSpacing: .linear)
+        let b = HeatMapConfiguration(levelSpacing: .logarithmic)
+        #expect(a != b)
+    }
+
     // MARK: - Stroke
 
     @Test func strokeHashableEquality() {
@@ -128,6 +162,7 @@ struct HeatMapConfigurationTests {
         let desc = String(describing: config)
         #expect(desc.contains("radius: 500.0m"))
         #expect(desc.contains("levels: 10"))
+        #expect(desc.contains("spacing: linear"))
         #expect(desc.contains("grid: 100"))
         #expect(desc.contains("gradient: HeatMapGradient.thermal"))
         #expect(desc.contains("padding: 1.5"))
@@ -140,6 +175,7 @@ struct HeatMapConfigurationTests {
         let config = HeatMapConfiguration(
             radius: 300,
             contourLevels: 5,
+            levelSpacing: .logarithmic,
             gridResolution: 50,
             gradient: .cool,
             fillOpacity: 0.5,
@@ -149,6 +185,7 @@ struct HeatMapConfigurationTests {
         let desc = String(describing: config)
         #expect(desc.contains("radius: 300.0m"))
         #expect(desc.contains("levels: 5"))
+        #expect(desc.contains("spacing: logarithmic"))
         #expect(desc.contains("grid: 50"))
         #expect(desc.contains("gradient: HeatMapGradient.cool"))
         #expect(desc.contains("fillOpacity: 0.5"))

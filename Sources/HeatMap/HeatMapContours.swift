@@ -221,11 +221,16 @@ public struct HeatMapContours: Sendable, Equatable {
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) -> HeatMapContours {
         let grid = DensityGrid.compute(from: points, configuration: configuration)
+        let thresholds = configuration.levelSpacing.resolveThresholds(
+            levels: configuration.contourLevels,
+            minDensity: grid.minDensity,
+            maxDensity: grid.maxDensity
+        )
         // Safe to force-try: Task.checkCancellation() is a no-op outside of a Task.
         // swiftlint:disable:next force_try
         let result = try! MarchingSquares.extractContours(
             from: grid,
-            levels: configuration.contourLevels
+            thresholds: thresholds
         )
         let smoothed = result.polygons.map { polygon in
             ContourPolygon(
@@ -236,7 +241,7 @@ public struct HeatMapContours: Sendable, Equatable {
         }
         return HeatMapContours(
             polygons: smoothed,
-            levels: configuration.contourLevels,
+            levels: thresholds.count,
             _gradient: configuration.gradient,
             _fillOpacity: configuration.fillOpacity,
             _stroke: configuration.stroke
@@ -278,14 +283,21 @@ public struct HeatMapContours: Sendable, Equatable {
             let grid = DensityGrid.compute(from: points, configuration: configuration)
             try Task.checkCancellation()
 
-            // 2. Contour extraction (checks between each level internally)
+            // 2. Resolve thresholds
+            let thresholds = configuration.levelSpacing.resolveThresholds(
+                levels: configuration.contourLevels,
+                minDensity: grid.minDensity,
+                maxDensity: grid.maxDensity
+            )
+
+            // 3. Contour extraction (checks between each level internally)
             let result = try MarchingSquares.extractContours(
                 from: grid,
-                levels: configuration.contourLevels
+                thresholds: thresholds
             )
             try Task.checkCancellation()
 
-            // 3. Smoothing (check between each polygon)
+            // 4. Smoothing (check between each polygon)
             let smoothed = try result.polygons.map { polygon in
                 try Task.checkCancellation()
                 return ContourPolygon(
@@ -297,7 +309,7 @@ public struct HeatMapContours: Sendable, Equatable {
 
             return HeatMapContours(
                 polygons: smoothed,
-                levels: configuration.contourLevels,
+                levels: thresholds.count,
                 _gradient: configuration.gradient,
                 _fillOpacity: configuration.fillOpacity,
                 _stroke: configuration.stroke
