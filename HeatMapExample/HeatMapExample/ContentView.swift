@@ -53,8 +53,8 @@ struct ContentView: View {
                     gradient: selectedGradient.gradient,
                     levelCount: Int(contourLevels)
                 )
-                .legendAxis(legendAxis)
-                .legendLabels(legendLabels)
+                .axis(legendAxis)
+                .labels(legendLabels)
                 .padding()
             }
         }

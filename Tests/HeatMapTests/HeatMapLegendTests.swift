@@ -81,16 +81,16 @@ struct HeatMapLegendTests {
     }
 
     @MainActor
-    @Test func legendAxisModifierDoesNotCrash() {
+    @Test func axisModifierDoesNotCrash() {
         let legend = HeatMapLegend(gradient: .thermal, levelCount: 10)
-            .legendAxis(.horizontal)
+            .axis(.horizontal)
         _ = legend.body
     }
 
     @MainActor
-    @Test func legendLabelsModifierDoesNotCrash() {
+    @Test func labelsModifierDoesNotCrash() {
         let legend = HeatMapLegend(gradient: .thermal, levelCount: 10)
-            .legendLabels(.hidden)
+            .labels(.hidden)
         _ = legend.body
     }
 }

@@ -181,8 +181,8 @@ Configure the axis and label visibility with modifiers:
 
 ```swift
 HeatMapLegend(gradient: .thermal, levelCount: 10)
-    .legendAxis(.horizontal)
-    .legendLabels(.hidden)
+    .axis(.horizontal)
+    .labels(.hidden)
 ```
 
 ### Built-in Gradients

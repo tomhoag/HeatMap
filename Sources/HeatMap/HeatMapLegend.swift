@@ -34,8 +34,8 @@ import SwiftUI
 ///
 /// ```swift
 /// HeatMapLegend(gradient: .thermal, levelCount: 10)
-///     .legendAxis(.horizontal)
-///     .legendLabels(.hidden)
+///     .axis(.horizontal)
+///     .labels(.hidden)
 /// ```
 ///
 /// ## Topics
@@ -47,8 +47,8 @@ import SwiftUI
 ///
 /// ### Configuring Appearance
 ///
-/// - ``legendAxis(_:)``
-/// - ``legendLabels(_:)``
+/// - ``axis(_:)``
+/// - ``labels(_:)``
 /// - ``LabelVisibility``
 public struct HeatMapLegend: View {
     private let gradient: HeatMapGradient
@@ -114,7 +114,7 @@ public struct HeatMapLegend: View {
     ///   (low) to top (high). `.horizontal` draws from left (low) to right
     ///   (high).
     /// - Returns: A legend configured with the given axis.
-    public func legendAxis(_ axis: Axis) -> HeatMapLegend {
+    public func axis(_ axis: Axis) -> HeatMapLegend {
         var copy = self
         copy.axis = axis
         return copy
@@ -124,7 +124,7 @@ public struct HeatMapLegend: View {
     ///
     /// - Parameter visibility: The label visibility mode.
     /// - Returns: A legend configured with the given label visibility.
-    public func legendLabels(_ visibility: LabelVisibility) -> HeatMapLegend {
+    public func labels(_ visibility: LabelVisibility) -> HeatMapLegend {
         var copy = self
         copy.labelVisibility = visibility
         return copy
