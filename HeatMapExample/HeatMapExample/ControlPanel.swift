@@ -43,16 +43,16 @@ enum SmootherOption: String, CaseIterable, Identifiable {
 }
 
 enum LabelVisibilityOption: String, CaseIterable, Identifiable {
-    case automatic = "Auto"
-    case minMax = "Min/Max"
+    case thresholds = "Thresholds"
+    case lowHigh = "Low/High"
     case hidden = "Hidden"
 
     var id: String { rawValue }
 
     var visibility: HeatMapLegend.LabelVisibility {
         switch self {
-        case .automatic: .automatic
-        case .minMax: .minMax
+        case .thresholds: .thresholds
+        case .lowHigh: .lowHigh
         case .hidden: .hidden
         }
     }
@@ -67,7 +67,7 @@ struct ControlPanel: View {
     @Binding var legendLabels: HeatMapLegend.LabelVisibility
     @Binding var showControls: Bool
 
-    @State private var selectedLabelVisibility: LabelVisibilityOption = .automatic
+    @State private var selectedLabelVisibility: LabelVisibilityOption = .thresholds
 
     var body: some View {
         VStack(spacing: 16) {

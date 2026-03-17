@@ -21,9 +21,21 @@ struct ContentView: View {
     @State private var selectedGradient: GradientOption = .thermal
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
-    @State private var legendLabels: HeatMapLegend.LabelVisibility = .automatic
+    @State private var legendLabels: HeatMapLegend.LabelVisibility = .thresholds
     @State private var showControls = false
     @Namespace private var namespace
+
+    private var resolvedLegendLabels: HeatMapLegend.LabelVisibility {
+        switch legendLabels {
+        case .thresholds:
+            return .customLowHigh(
+                low: String(format: "%.1f°", valueMin),
+                high: String(format: "%.1f°", valueMax)
+            )
+        default:
+            return legendLabels
+        }
+    }
 
     private var configuration: HeatMapConfiguration {
         HeatMapConfiguration(
@@ -62,11 +74,7 @@ struct ContentView: View {
             if let contours {
                 HeatMapLegend(contours: contours)
                     .axis(legendAxis)
-                    .labels(legendLabels)
-                    .labelFormatter { [valueMin, valueMax] weight in
-                        let temp = valueMin + weight * (valueMax - valueMin)
-                        return String(format: "%.1f°", temp)
-                    }
+                    .labels(resolvedLegendLabels)
                     .padding()
             }
         }
