@@ -42,6 +42,24 @@ enum SmootherOption: String, CaseIterable, Identifiable {
     }
 }
 
+enum StrokeOption: String, CaseIterable, Identifiable {
+    case none = "None"
+    case thin = "Thin"
+    case medium = "Medium"
+    case thick = "Thick"
+
+    var id: String { rawValue }
+
+    var stroke: HeatMapStroke {
+        switch self {
+        case .none: .none
+        case .thin: .styled(color: .black, lineWidth: 0.5)
+        case .medium: .styled(color: .black, lineWidth: 1)
+        case .thick: .styled(color: .black, lineWidth: 2)
+        }
+    }
+}
+
 enum LabelVisibilityOption: String, CaseIterable, Identifiable {
     case thresholds = "Thresholds"
     case lowHigh = "Low/High"
@@ -63,6 +81,7 @@ struct ControlPanel: View {
     @Binding var contourLevels: Double
     @Binding var selectedGradient: GradientOption
     @Binding var fillOpacity: Double
+    @Binding var selectedStroke: StrokeOption
     @Binding var selectedSmoother: SmootherOption
     @Binding var legendAxis: Axis
     @Binding var legendLabels: HeatMapLegend.LabelVisibility
@@ -100,6 +119,13 @@ struct ControlPanel: View {
 
                 Picker("Smoothing", selection: $selectedSmoother) {
                     ForEach(SmootherOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Picker("Stroke", selection: $selectedStroke) {
+                    ForEach(StrokeOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }

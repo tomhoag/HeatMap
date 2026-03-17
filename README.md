@@ -11,6 +11,7 @@ A Swift package for rendering geographic heat maps as filled contour polygons in
 - **Gaussian kernel density estimation** with configurable radius and grid resolution
 - **Marching squares contour extraction** with Chaikin polygon smoothing
 - **Cooperative Task cancellation** — the async `compute` method checks for cancellation between pipeline stages (after the density grid, between contour levels, and between polygon smoothing passes), so cancelled Tasks exit early instead of running to completion
+- **Configurable fill opacity and polygon stroke** for fine-tuned rendering control
 - **Built-in color gradients** (thermal, warm, cool, monochrome) plus custom gradient support
 - **Adaptive configuration** that auto-derives radius and resolution from your data
 - **Gradient legend view** with configurable axis and label visibility
@@ -118,6 +119,8 @@ contours = try? await HeatMapContours.compute(from: points, configuration: confi
 | `gridResolution` | `100` | Grid cells along the longer axis. Higher values increase detail and computation time. |
 | `gradient` | `.thermal` | Color gradient for mapping density to color. |
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
+| `fillOpacity` | `1.0` | Fill opacity for contour polygons (`0`–`1`). |
+| `stroke` | `.none` | Polygon stroke style (`.none` or `.styled(color:lineWidth:)`). |
 | `smoother` | `.chaikin()` | Polygon smoother to reduce stair-step artifacts. |
 
 ### 4. Adaptive Configuration
@@ -243,7 +246,7 @@ The repository includes **HeatMapExample**, an iOS app that demonstrates the lib
 2. The project already references the local `HeatMap` package.
 3. Select an iOS simulator or device and run.
 
-The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, and polygon smoothing in real time.
+The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, polygon stroke, and smoothing in real time.
 
 ## Documentation
 

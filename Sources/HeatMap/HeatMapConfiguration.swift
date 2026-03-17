@@ -45,6 +45,7 @@ import Foundation
 ///
 /// - ``gradient``
 /// - ``fillOpacity``
+/// - ``stroke``
 ///
 /// ### Adaptive Configuration
 ///
@@ -91,6 +92,14 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// This affects only polygon fills, not strokes. The default is `1.0`.
     public var fillOpacity: Double
 
+    /// The stroke style applied to contour polygon borders.
+    ///
+    /// Controls whether MapKit's default polygon border is visible and,
+    /// if so, what color and width it uses. The default is
+    /// ``HeatMapStroke/none``, which suppresses the default border for
+    /// smooth blending between contour levels.
+    public var stroke: HeatMapStroke
+
     /// The polygon smoother applied to extracted contour polygons.
     ///
     /// Smoothing reduces the stair-step artifacts produced by the marching
@@ -116,6 +125,7 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///     Minimum: `0`. Default: `1.5`.
     ///   - fillOpacity: The fill opacity for contour polygons. Clamped to
     ///     `0...1`. Default: `1.0`.
+    ///   - stroke: The polygon stroke style. Default: ``HeatMapStroke/none``.
     ///   - smoother: The polygon smoother. Default:
     ///     ``PolygonSmoother/chaikin(iterations:)`` with 2 iterations.
     public init(
@@ -125,6 +135,7 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         gradient: HeatMapGradient = .thermal,
         paddingFactor: Double = 1.5,
         fillOpacity: Double = 1.0,
+        stroke: HeatMapStroke = .none,
         smoother: PolygonSmoother = .chaikin()
     ) {
         self.radius = max(radius, 1)
@@ -133,12 +144,13 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         self.gradient = gradient
         self.paddingFactor = max(paddingFactor, 0)
         self.fillOpacity = min(max(fillOpacity, 0), 1)
+        self.stroke = stroke
         self.smoother = smoother
     }
 }
 
 extension HeatMapConfiguration: CustomStringConvertible {
     public var description: String {
-        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), smoother: \(smoother))"
+        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), stroke: \(stroke), smoother: \(smoother))"
     }
 }

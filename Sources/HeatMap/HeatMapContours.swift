@@ -114,17 +114,19 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
 /// - ``levelCount``
 /// - ``gradient``
 /// - ``fillOpacity``
+/// - ``stroke``
 ///
 /// ### Contour Data
 ///
 /// - ``HeatMapPolygon``
 public struct HeatMapContours: Sendable, Equatable {
     /// Two contour results are equal when they have the same level count,
-    /// gradient, fill opacity, and polygon identities (in order).
+    /// gradient, fill opacity, stroke, and polygon identities (in order).
     public static func == (lhs: HeatMapContours, rhs: HeatMapContours) -> Bool {
         lhs.levels == rhs.levels
             && lhs._gradient == rhs._gradient
             && lhs._fillOpacity == rhs._fillOpacity
+            && lhs._stroke == rhs._stroke
             && lhs.polygons.count == rhs.polygons.count
             && zip(lhs.polygons, rhs.polygons).allSatisfy { $0.id == $1.id }
     }
@@ -140,6 +142,9 @@ public struct HeatMapContours: Sendable, Equatable {
 
     /// The fill opacity used during computation (internal storage).
     let _fillOpacity: Double
+
+    /// The stroke style used during computation (internal storage).
+    let _stroke: HeatMapStroke
 
     /// The contour polygons as ``HeatMapPolygon`` values.
     ///
@@ -190,6 +195,14 @@ public struct HeatMapContours: Sendable, Equatable {
     /// polygons.
     public var fillOpacity: Double { _fillOpacity }
 
+    /// The stroke style associated with these contours.
+    ///
+    /// This is the ``HeatMapConfiguration/stroke`` value that was
+    /// specified in the configuration used during computation. It is used
+    /// by ``HeatMapLayer/init(contours:)`` to style the rendered polygon
+    /// borders.
+    public var stroke: HeatMapStroke { _stroke }
+
     /// Computes contours from the given points and configuration.
     ///
     /// This method builds a ``DensityGrid``, extracts contour polygons via
@@ -225,7 +238,8 @@ public struct HeatMapContours: Sendable, Equatable {
             polygons: smoothed,
             levels: configuration.contourLevels,
             _gradient: configuration.gradient,
-            _fillOpacity: configuration.fillOpacity
+            _fillOpacity: configuration.fillOpacity,
+            _stroke: configuration.stroke
         )
     }
 
@@ -285,7 +299,8 @@ public struct HeatMapContours: Sendable, Equatable {
                 polygons: smoothed,
                 levels: configuration.contourLevels,
                 _gradient: configuration.gradient,
-                _fillOpacity: configuration.fillOpacity
+                _fillOpacity: configuration.fillOpacity,
+                _stroke: configuration.stroke
             )
         }.value
     }

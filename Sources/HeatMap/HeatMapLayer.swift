@@ -56,6 +56,9 @@ public struct HeatMapLayer: MapContent {
     /// The fill opacity applied to each polygon.
     private let fillOpacity: Double
 
+    /// The stroke style applied to each polygon.
+    private let stroke: HeatMapStroke
+
     /// Creates a heat map layer from pre-computed contours.
     ///
     /// Use ``HeatMapContours/compute(from:configuration:)-swift.type.method``
@@ -67,6 +70,7 @@ public struct HeatMapLayer: MapContent {
         self.gradient = contours._gradient
         self.totalLevels = contours.levels
         self.fillOpacity = contours._fillOpacity
+        self.stroke = contours._stroke
     }
 
     @MainActor
@@ -74,6 +78,7 @@ public struct HeatMapLayer: MapContent {
         ForEach(contours) { polygon in
             MapPolygon(coordinates: polygon.coordinates)
                 .foregroundStyle(colorForLevel(polygon.level))
+                .stroke(strokeColor, lineWidth: strokeLineWidth)
         }
     }
 
@@ -91,5 +96,25 @@ public struct HeatMapLayer: MapContent {
             color = gradient.colors.first ?? .clear
         }
         return color.opacity(fillOpacity)
+    }
+
+    /// The resolved stroke color from the configured stroke style.
+    private var strokeColor: Color {
+        switch stroke {
+        case .none:
+            return .clear
+        case .styled(let color, _):
+            return color
+        }
+    }
+
+    /// The resolved stroke line width from the configured stroke style.
+    private var strokeLineWidth: CGFloat {
+        switch stroke {
+        case .none:
+            return 0
+        case .styled(_, let lineWidth):
+            return lineWidth
+        }
     }
 }
