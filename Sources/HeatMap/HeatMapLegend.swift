@@ -121,12 +121,11 @@ public struct HeatMapLegend: View {
         self.gradient = contours.gradient
         self.levelCount = contours.levelCount
         // Extract unique thresholds sorted by level
-        let uniqueThresholds = Dictionary(
-            grouping: contours.contours,
-            by: \.level
-        )
-        .sorted { $0.key < $1.key }
-        .map { $0.value.first!.threshold }
+        let polygons: [HeatMapPolygon] = contours.contours
+        let grouped = Dictionary(grouping: polygons, by: { $0.level })
+        let uniqueThresholds = grouped
+            .sorted { $0.key < $1.key }
+            .map { $0.value.first!.threshold }
         self.thresholds = uniqueThresholds.isEmpty ? nil : uniqueThresholds
     }
 

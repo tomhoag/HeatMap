@@ -99,7 +99,7 @@ struct HeatMapContoursTests {
             Issue.record("Expected at least one contour")
             return
         }
-        let copy = HeatMapContour(
+        let copy = HeatMapPolygon(
             id: first.id,
             level: first.level,
             threshold: first.threshold,
@@ -114,7 +114,7 @@ struct HeatMapContoursTests {
             Issue.record("Expected at least one contour")
             return
         }
-        let different = HeatMapContour(
+        let different = HeatMapPolygon(
             id: UUID(),
             level: first.level,
             threshold: first.threshold,
