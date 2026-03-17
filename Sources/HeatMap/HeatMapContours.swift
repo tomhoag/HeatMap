@@ -39,6 +39,10 @@ import SwiftUI
 /// ### Accessing Geometry
 ///
 /// - ``coordinates``
+///
+/// ### Geometry Queries
+///
+/// - ``contains(_:)``
 public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
     /// Two contours are equal when they share the same ``id``.
     public static func == (lhs: HeatMapPolygon, rhs: HeatMapPolygon) -> Bool {
@@ -115,6 +119,10 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
 /// - ``gradient``
 /// - ``fillOpacity``
 /// - ``stroke``
+///
+/// ### Hit Testing
+///
+/// - ``contours(containing:)``
 ///
 /// ### Contour Data
 ///

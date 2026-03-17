@@ -166,7 +166,7 @@ Use `.task(id:)` to recompute contours whenever the configuration changes:
 
 var body: some View {
     Map {
-        if let contours {
+        if let contours { 
             HeatMapLayer(contours: contours)
         }
     }

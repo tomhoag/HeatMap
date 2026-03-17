@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var legendAxis: Axis = .vertical
     @State private var legendLabels: HeatMapLegend.LabelVisibility = .thresholds
     @State private var showControls = false
+    @State private var tapInfo: TapInfo?
     @Namespace private var namespace
 
     private var resolvedLegendLabels: HeatMapLegend.LabelVisibility {
@@ -54,65 +55,107 @@ struct ContentView: View {
     }
 
     var body: some View {
-        Map(position: $position) {
-            if let contours {
-                HeatMapLayer(contours: contours)
+        MapReader { proxy in
+            Map(position: $position) {
+                if let contours {
+                    HeatMapLayer(contours: contours)
+                }
             }
-        }
-        .mapStyle(
-            .hybrid(
-                elevation: .automatic,
-                pointsOfInterest: .excludingAll,
-                showsTraffic: false
-            )
-        )
-        .task {
-            loadPoints()
-        }
-        .task(id: configuration) {
-            guard !points.isEmpty else { return }
-            contours = try? await HeatMapContours.compute(
-                from: points,
-                configuration: configuration
-            )
-        }
-        .overlay(alignment: .topTrailing) {
-            if let contours {
-                HeatMapLegend(contours: contours)
-                    .axis(legendAxis)
-                    .labels(resolvedLegendLabels)
-                    .padding()
+            .onTapGesture { screenPoint in
+                guard let coordinate = proxy.convert(screenPoint, from: .local),
+                      let contours else {
+                    tapInfo = nil
+                    return
+                }
+                let hit = contours.contours(containing: coordinate)
+                if let innermost = hit.last {
+                    tapInfo = TapInfo(
+                        coordinate: coordinate,
+                        screenPoint: screenPoint,
+                        level: innermost.level,
+                        threshold: innermost.threshold,
+                        totalLevels: contours.levelCount
+                    )
+                } else {
+                    tapInfo = nil
+                }
             }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            GlassEffectContainer {
-                VStack(alignment: .trailing) {
-                    if !showControls {
-                        Button("Controls", systemImage: "slider.horizontal.3") {
-                            withAnimation(.smooth) {
-                                showControls = true
-                            }
-                        }
-                        .buttonStyle(.glass)
-                        .glassEffectID("controls", in: namespace)
-                    } else {
-                        ControlPanel(
-                            radius: $radius,
-                            contourLevels: $contourLevels,
-                            selectedGradient: $selectedGradient,
-                            fillOpacity: $fillOpacity,
-                            selectedStroke: $selectedStroke,
-                            selectedSpacing: $selectedSpacing,
-                            selectedSmoother: $selectedSmoother,
-                            legendAxis: $legendAxis,
-                            legendLabels: $legendLabels,
-                            showControls: $showControls
-                        )
-                        .glassEffectID("controls", in: namespace)
+            .mapStyle(
+                .hybrid(
+                    elevation: .automatic,
+                    pointsOfInterest: .excludingAll,
+                    showsTraffic: false
+                )
+            )
+            .task {
+                loadPoints()
+            }
+            .task(id: configuration) {
+                guard !points.isEmpty else { return }
+                tapInfo = nil
+                contours = try? await HeatMapContours.compute(
+                    from: points,
+                    configuration: configuration
+                )
+            }
+            .overlay {
+                if let tapInfo {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Level \(tapInfo.level + 1) of \(tapInfo.totalLevels)")
+                            .font(.headline)
+                        Text("Threshold: \(tapInfo.threshold, specifier: "%.2f")")
+                            .font(.subheadline)
+                        Text("\(tapInfo.coordinate.latitude, specifier: "%.4f"), \(tapInfo.coordinate.longitude, specifier: "%.4f")")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(12)
+                    .glassEffect(in: .rect(cornerRadius: 12))
+                    .fixedSize()
+                    .position(x: tapInfo.screenPoint.x, y: tapInfo.screenPoint.y - 60)
+                    .onTapGesture {
+                        self.tapInfo = nil
                     }
                 }
             }
-            .padding()
+            .overlay(alignment: .topTrailing) {
+                if let contours {
+                    HeatMapLegend(contours: contours)
+                        .axis(legendAxis)
+                        .labels(resolvedLegendLabels)
+                        .padding()
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                GlassEffectContainer {
+                    VStack(alignment: .trailing) {
+                        if !showControls {
+                            Button("Controls", systemImage: "slider.horizontal.3") {
+                                withAnimation(.smooth) {
+                                    showControls = true
+                                }
+                            }
+                            .buttonStyle(.glass)
+                            .glassEffectID("controls", in: namespace)
+                        } else {
+                            ControlPanel(
+                                radius: $radius,
+                                contourLevels: $contourLevels,
+                                selectedGradient: $selectedGradient,
+                                fillOpacity: $fillOpacity,
+                                selectedStroke: $selectedStroke,
+                                selectedSpacing: $selectedSpacing,
+                                selectedSmoother: $selectedSmoother,
+                                legendAxis: $legendAxis,
+                                legendLabels: $legendLabels,
+                                showControls: $showControls
+                            )
+                            .glassEffectID("controls", in: namespace)
+                        }
+                    }
+                }
+                .padding()
+            }
         }
     }
 
@@ -170,6 +213,14 @@ struct ContentView: View {
         HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7780, longitude: -122.4185), weight: 4),
         HeatMapPoint(coordinate: CLLocationCoordinate2D(latitude: 37.7725, longitude: -122.4175), weight: 7),
     ]
+}
+
+private struct TapInfo {
+    let coordinate: CLLocationCoordinate2D
+    let screenPoint: CGPoint
+    let level: Int
+    let threshold: Double
+    let totalLevels: Int
 }
 
 #Preview {
