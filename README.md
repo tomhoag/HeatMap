@@ -61,7 +61,7 @@ struct SensorReading: HeatMapable {
 
 ### 2. Add a Heat Map Layer to a Map
 
-Drop `HeatMapLayer` into a SwiftUI `Map` content builder:
+Compute contours asynchronously and pass them to `HeatMapLayer`:
 
 ```swift
 import HeatMap
@@ -70,10 +70,16 @@ import SwiftUI
 
 struct MyMapView: View {
     let points: [SensorReading]
+    @State private var contours: HeatMapContours?
 
     var body: some View {
         Map {
-            HeatMapLayer(points: points)
+            if let contours {
+                HeatMapLayer(contours: contours)
+            }
+        }
+        .task {
+            contours = await HeatMapContours.compute(from: points)
         }
     }
 }
@@ -84,18 +90,15 @@ struct MyMapView: View {
 Control the appearance and computation through `HeatMapConfiguration`:
 
 ```swift
-Map {
-    HeatMapLayer(
-        points: points,
-        configuration: HeatMapConfiguration(
-            radius: 1000,          // Gaussian kernel radius in meters
-            contourLevels: 12,     // number of contour bands
-            gridResolution: 120,   // grid cells along the longer axis
-            gradient: .cool,       // color gradient (.thermal, .warm, .cool, or custom)
-            smoother: .chaikin(iterations: 3)  // polygon smoothing
-        )
-    )
-}
+let config = HeatMapConfiguration(
+    radius: 1000,          // Gaussian kernel radius in meters
+    contourLevels: 12,     // number of contour bands
+    gridResolution: 120,   // grid cells along the longer axis
+    gradient: .cool,       // color gradient (.thermal, .warm, .cool, or custom)
+    smoother: .chaikin(iterations: 3)  // polygon smoothing
+)
+
+contours = await HeatMapContours.compute(from: points, configuration: config)
 ```
 
 | Parameter | Default | Description |
@@ -113,9 +116,7 @@ If you don't know the geographic scale of your data in advance, let the library 
 
 ```swift
 let config = HeatMapConfiguration.adaptive(for: points)
-Map {
-    HeatMapLayer(points: points, configuration: config)
-}
+contours = await HeatMapContours.compute(from: points, configuration: config)
 ```
 
 You can still override individual properties afterward:
@@ -127,12 +128,13 @@ config.gradient = .cool
 
 **Note:** The adaptive configuration is a snapshot of the current point set. If points change dynamically, you must call `adaptive(for:)` again, which may shift the radius or resolution and cause a visual discontinuity. For stable visuals with dynamic data, prefer setting configuration values explicitly.
 
-### 5. Pre-compute Contours for Large Datasets
+### 5. Recompute When Configuration Changes
 
-For large datasets, compute contours asynchronously to avoid blocking the main actor:
+Use `.task(id:)` to recompute contours whenever the configuration changes:
 
 ```swift
 @State private var contours: HeatMapContours?
+@State private var config = HeatMapConfiguration()
 
 var body: some View {
     Map {
@@ -140,8 +142,8 @@ var body: some View {
             HeatMapLayer(contours: contours)
         }
     }
-    .task {
-        contours = await HeatMapContours.compute(from: largePointArray)
+    .task(id: config) {
+        contours = await HeatMapContours.compute(from: points, configuration: config)
     }
 }
 ```
@@ -163,7 +165,9 @@ Display a legend showing the color scale alongside the map:
 
 ```swift
 Map {
-    HeatMapLayer(points: points, configuration: config)
+    if let contours {
+        HeatMapLayer(contours: contours)
+    }
 }
 .overlay(alignment: .bottomLeading) {
     HeatMapLegend(gradient: config.gradient, levelCount: config.contourLevels)

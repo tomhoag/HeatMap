@@ -13,9 +13,7 @@ import Foundation
 /// with no arguments for a quick start:
 ///
 /// ```swift
-/// Map {
-///     HeatMapLayer(points: myPoints) // uses default configuration
-/// }
+/// let contours = await HeatMapContours.compute(from: myPoints)
 /// ```
 ///
 /// Customize individual parameters as needed:
@@ -27,9 +25,7 @@ import Foundation
 ///     gradient: .cool,
 ///     smoother: .chaikin(iterations: 3)
 /// )
-/// Map {
-///     HeatMapLayer(points: myPoints, configuration: config)
-/// }
+/// let contours = await HeatMapContours.compute(from: myPoints, configuration: config)
 /// ```
 ///
 /// ## Topics

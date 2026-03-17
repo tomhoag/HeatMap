@@ -10,21 +10,21 @@ import SwiftUI
 
 /// A heat map layer rendered as filled contour polygons inside a SwiftUI `Map`.
 ///
-/// Place this inside a `Map` content builder to visualize geographic density
-/// data:
+/// Pre-compute contours using
+/// ``HeatMapContours/compute(from:configuration:)-swift.type.method``
+/// and pass the result to ``init(contours:)``:
 ///
 /// ```swift
+/// @State private var contours: HeatMapContours?
+///
 /// Map {
-///     HeatMapLayer(points: myPoints)
+///     if let contours {
+///         HeatMapLayer(contours: contours)
+///     }
 /// }
-/// ```
-///
-/// Customize the appearance and behavior through ``HeatMapConfiguration``:
-///
-/// ```swift
-/// Map {
-///     HeatMapLayer(
-///         points: myPoints,
+/// .task {
+///     contours = await HeatMapContours.compute(
+///         from: myPoints,
 ///         configuration: HeatMapConfiguration(
 ///             radius: 300,
 ///             contourLevels: 12,
@@ -34,15 +34,10 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// For large datasets, pre-compute contours asynchronously using
-/// ``HeatMapContours/compute(from:configuration:)-swift.type.method``
-/// and pass the result to ``init(contours:)``.
-///
 /// ## Topics
 ///
 /// ### Creating a Layer
 ///
-/// - ``init(points:configuration:)``
 /// - ``init(contours:)``
 ///
 /// ### Pre-computing Contours
@@ -58,29 +53,10 @@ public struct HeatMapLayer: MapContent {
     /// The total number of contour levels, used for color mapping.
     private let totalLevels: Int
 
-    /// Creates a heat map layer from weighted geographic points.
-    ///
-    /// The density grid and contour polygons are computed synchronously.
-    /// For large datasets, use ``HeatMapContours/compute(from:configuration:)``
-    /// to pre-compute off the main actor.
-    ///
-    /// - Parameters:
-    ///   - points: The weighted geographic points to visualize. Must conform
-    ///     to ``HeatMapable``.
-    ///   - configuration: The rendering configuration. Defaults to
-    ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:smoother:)``.
-    public init<P: HeatMapable>(
-        points: [P],
-        configuration: HeatMapConfiguration = HeatMapConfiguration()
-    ) {
-        self.init(contours: HeatMapContours.compute(from: points, configuration: configuration))
-    }
-
     /// Creates a heat map layer from pre-computed contours.
     ///
-    /// Use this initializer with the output of
-    /// ``HeatMapContours/compute(from:configuration:)`` to avoid blocking
-    /// the main actor.
+    /// Use ``HeatMapContours/compute(from:configuration:)-swift.type.method``
+    /// to compute contours asynchronously, then pass the result here.
     ///
     /// - Parameter contours: Pre-computed contour data.
     public init(contours: HeatMapContours) {

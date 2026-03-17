@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var position: MapCameraPosition = .automatic
 
     @State private var points: [HeatMapPoint] = []
+    @State private var contours: HeatMapContours?
     @State private var radius: Double = 500
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
@@ -22,19 +23,20 @@ struct ContentView: View {
     @State private var showControls = false
     @Namespace private var namespace
 
+    private var configuration: HeatMapConfiguration {
+        HeatMapConfiguration(
+            radius: radius,
+            contourLevels: Int(contourLevels),
+            gridResolution: 120,
+            gradient: selectedGradient.gradient,
+            smoother: selectedSmoother.smoother
+        )
+    }
+
     var body: some View {
         Map(position: $position) {
-            if !points.isEmpty {
-                HeatMapLayer(
-                    points: points,
-                    configuration: HeatMapConfiguration(
-                        radius: radius,
-                        contourLevels: Int(contourLevels),
-                        gridResolution: 120,
-                        gradient: selectedGradient.gradient,
-                        smoother: selectedSmoother.smoother
-                    )
-                )
+            if let contours {
+                HeatMapLayer(contours: contours)
             }
         }
         .mapStyle(
@@ -46,6 +48,13 @@ struct ContentView: View {
         )
         .task {
             loadPoints()
+        }
+        .task(id: configuration) {
+            guard !points.isEmpty else { return }
+            contours = await HeatMapContours.compute(
+                from: points,
+                configuration: configuration
+            )
         }
         .overlay(alignment: .topTrailing) {
             if !points.isEmpty {

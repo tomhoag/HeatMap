@@ -16,7 +16,9 @@ import SwiftUI
 ///
 /// ```swift
 /// Map {
-///     HeatMapLayer(points: points, configuration: config)
+///     if let contours {
+///         HeatMapLayer(contours: contours)
+///     }
 /// }
 /// .overlay(alignment: .bottomLeading) {
 ///     HeatMapLegend(gradient: config.gradient, levelCount: config.contourLevels)
