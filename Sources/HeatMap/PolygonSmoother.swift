@@ -126,6 +126,18 @@ public struct AnyPolygonSmoother: PolygonSmoother {
     }
 }
 
+extension AnyPolygonSmoother: CustomStringConvertible {
+    public var description: String {
+        if let chaikin = unwrapped as? ChaikinSmoother {
+            return "chaikin(\(chaikin.iterations))"
+        } else if unwrapped is NullSmoother {
+            return "none"
+        } else {
+            return String(describing: type(of: unwrapped))
+        }
+    }
+}
+
 extension AnyPolygonSmoother {
     /// No smoothing applied.
     ///

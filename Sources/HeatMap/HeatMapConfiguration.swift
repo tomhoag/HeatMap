@@ -128,3 +128,9 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         self.smoother = smoother
     }
 }
+
+extension HeatMapConfiguration: CustomStringConvertible {
+    public var description: String {
+        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, smoother: \(smoother))"
+    }
+}

@@ -158,3 +158,19 @@ extension HeatMapGradient {
         ])!
     }
 }
+
+extension HeatMapGradient: CustomStringConvertible {
+    public var description: String {
+        let name: String
+        if self == .thermal {
+            name = "thermal"
+        } else if self == .warm {
+            name = "warm"
+        } else if self == .cool {
+            name = "cool"
+        } else {
+            name = "custom"
+        }
+        return "HeatMapGradient.\(name) (\(colors.count) stops)"
+    }
+}

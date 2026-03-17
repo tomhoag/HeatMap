@@ -87,4 +87,33 @@ struct HeatMapConfigurationTests {
         let config = HeatMapConfiguration(paddingFactor: -0.5)
         #expect(config.paddingFactor == 0)
     }
+
+    // MARK: - CustomStringConvertible
+
+    @Test func descriptionContainsAllFields() {
+        let config = HeatMapConfiguration()
+        let desc = String(describing: config)
+        #expect(desc.contains("radius: 500.0m"))
+        #expect(desc.contains("levels: 10"))
+        #expect(desc.contains("grid: 100"))
+        #expect(desc.contains("gradient: HeatMapGradient.thermal"))
+        #expect(desc.contains("padding: 1.5"))
+        #expect(desc.contains("smoother: chaikin(2)"))
+    }
+
+    @Test func descriptionReflectsCustomValues() {
+        let config = HeatMapConfiguration(
+            radius: 300,
+            contourLevels: 5,
+            gridResolution: 50,
+            gradient: .cool,
+            smoother: .none
+        )
+        let desc = String(describing: config)
+        #expect(desc.contains("radius: 300.0m"))
+        #expect(desc.contains("levels: 5"))
+        #expect(desc.contains("grid: 50"))
+        #expect(desc.contains("gradient: HeatMapGradient.cool"))
+        #expect(desc.contains("smoother: none"))
+    }
 }

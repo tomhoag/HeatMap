@@ -102,4 +102,28 @@ struct HeatMapGradientTests {
     @Test func initWithSingleColorReturnsNil() {
         #expect(HeatMapGradient(colors: [.red]) == nil)
     }
+
+    // MARK: - CustomStringConvertible
+
+    @Test func descriptionForThermal() {
+        #expect(String(describing: HeatMapGradient.thermal) == "HeatMapGradient.thermal (7 stops)")
+    }
+
+    @Test func descriptionForWarm() {
+        #expect(String(describing: HeatMapGradient.warm) == "HeatMapGradient.warm (5 stops)")
+    }
+
+    @Test func descriptionForCool() {
+        #expect(String(describing: HeatMapGradient.cool) == "HeatMapGradient.cool (5 stops)")
+    }
+
+    @Test func descriptionForMonochrome() {
+        let gradient = HeatMapGradient.monochrome(.red)
+        #expect(String(describing: gradient) == "HeatMapGradient.custom (6 stops)")
+    }
+
+    @Test func descriptionForCustomGradient() {
+        let gradient = HeatMapGradient(colors: [.red, .blue])!
+        #expect(String(describing: gradient) == "HeatMapGradient.custom (2 stops)")
+    }
 }

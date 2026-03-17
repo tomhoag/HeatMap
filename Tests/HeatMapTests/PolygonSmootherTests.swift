@@ -197,4 +197,18 @@ struct PolygonSmootherTests {
         let result = config.smoother.smooth(triangle)
         #expect(result.count == triangle.count)
     }
+
+    // MARK: - CustomStringConvertible
+
+    @Test func descriptionForNone() {
+        #expect(String(describing: AnyPolygonSmoother.none) == "none")
+    }
+
+    @Test func descriptionForChaikinDefault() {
+        #expect(String(describing: AnyPolygonSmoother.chaikin()) == "chaikin(2)")
+    }
+
+    @Test func descriptionForChaikinCustomIterations() {
+        #expect(String(describing: AnyPolygonSmoother.chaikin(iterations: 5)) == "chaikin(5)")
+    }
 }
