@@ -14,6 +14,8 @@ struct ContentView: View {
 
     @State private var points: [HeatMapPoint] = []
     @State private var contours: HeatMapContours?
+    @State private var valueMin: Double = 0
+    @State private var valueMax: Double = 1
     @State private var radius: Double = 500
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
@@ -57,14 +59,15 @@ struct ContentView: View {
             )
         }
         .overlay(alignment: .topTrailing) {
-            if !points.isEmpty {
-                HeatMapLegend(
-                    gradient: selectedGradient.gradient,
-                    levelCount: Int(contourLevels)
-                )
-                .axis(legendAxis)
-                .labels(legendLabels)
-                .padding()
+            if let contours {
+                HeatMapLegend(contours: contours)
+                    .axis(legendAxis)
+                    .labels(legendLabels)
+                    .labelFormatter { [valueMin, valueMax] weight in
+                        let temp = valueMin + weight * (valueMax - valueMin)
+                        return String(format: "%.1f°", temp)
+                    }
+                    .padding()
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -98,15 +101,17 @@ struct ContentView: View {
 
     private func loadPoints() {
         guard let url = Bundle.main.url(forResource: "heatmap_points", withExtension: "json"),
-              let loaded = try? GSODLoader.load(from: url),
-              !loaded.isEmpty else { return }
-        points = loaded
+              let result = try? GSODLoader.load(from: url),
+              !result.points.isEmpty else { return }
+        points = result.points
+        valueMin = result.valueMin
+        valueMax = result.valueMax
 
-        let adaptive = HeatMapConfiguration.adaptive(for: loaded)
+        let adaptive = HeatMapConfiguration.adaptive(for: result.points)
         radius = adaptive.radius
 
-        let lats = loaded.map(\.coordinate.latitude)
-        let lons = loaded.map(\.coordinate.longitude)
+        let lats = result.points.map(\.coordinate.latitude)
+        let lons = result.points.map(\.coordinate.longitude)
         let center = CLLocationCoordinate2D(
             latitude: (lats.min()! + lats.max()!) / 2,
             longitude: (lons.min()! + lons.max()!) / 2

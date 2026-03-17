@@ -34,10 +34,16 @@ struct GSODLoader {
         }
     }
 
-    static func load(from url: URL) throws -> [HeatMapPoint] {
+    struct Result {
+        let points: [HeatMapPoint]
+        let valueMin: Double
+        let valueMax: Double
+    }
+
+    static func load(from url: URL) throws -> Result {
         let data = try Data(contentsOf: url)
         let file = try JSONDecoder().decode(GSODFile.self, from: data)
-        return file.points.map { raw in
+        let points = file.points.map { raw in
             HeatMapPoint(
                 coordinate: CLLocationCoordinate2D(
                     latitude: raw.latitude,
@@ -46,5 +52,10 @@ struct GSODLoader {
                 weight: raw.weight
             )
         }
+        return Result(
+            points: points,
+            valueMin: file.valueMin,
+            valueMax: file.valueMax
+        )
     }
 }

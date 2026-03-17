@@ -32,12 +32,20 @@ import SwiftUI
 /// HeatMapLegend(contours: computedContours)
 /// ```
 ///
-/// Customize the axis and label visibility with modifiers:
+/// Customize the axis, label visibility, and label formatting with modifiers:
 ///
 /// ```swift
 /// HeatMapLegend(gradient: .thermal, levelCount: 10)
 ///     .axis(.horizontal)
 ///     .labels(.hidden)
+///
+/// HeatMapLegend(contours: computedContours)
+///     .labelFormatter { value in
+///         String(format: "%.1f°C", value)
+///     }
+///
+/// HeatMapLegend(gradient: .thermal, levelCount: 10)
+///     .labels(.customMinMax(low: "Cold", high: "Hot"))
 /// ```
 ///
 /// ## Topics
@@ -51,6 +59,7 @@ import SwiftUI
 ///
 /// - ``axis(_:)``
 /// - ``labels(_:)``
+/// - ``labelFormatter(_:)``
 /// - ``LabelVisibility``
 public struct HeatMapLegend: View {
     private let gradient: HeatMapGradient
@@ -59,14 +68,25 @@ public struct HeatMapLegend: View {
 
     private var axis: Axis = .vertical
     private var labelVisibility: LabelVisibility = .automatic
+    private var _labelFormatter: (@Sendable (Double) -> String)?
 
     /// Controls which labels are shown alongside the gradient bar.
-    public enum LabelVisibility: Sendable {
+    public enum LabelVisibility: Sendable, Equatable {
         /// Shows threshold values if available (from contours), otherwise
         /// shows "Low" and "High".
         case automatic
         /// Always shows "Low" at the minimum end and "High" at the maximum end.
         case minMax
+        /// Shows custom text at the minimum and maximum ends of the legend.
+        ///
+        /// Use this to display domain-specific labels instead of "Low" and
+        /// "High":
+        ///
+        /// ```swift
+        /// HeatMapLegend(gradient: .thermal, levelCount: 10)
+        ///     .labels(.customMinMax(low: "Cold", high: "Hot"))
+        /// ```
+        case customMinMax(low: String, high: String)
         /// Shows density threshold values. Falls back to ``minMax`` if
         /// thresholds are not available.
         case thresholds
@@ -129,6 +149,31 @@ public struct HeatMapLegend: View {
     public func labels(_ visibility: LabelVisibility) -> HeatMapLegend {
         var copy = self
         copy.labelVisibility = visibility
+        return copy
+    }
+
+    /// Sets a custom formatter for threshold labels.
+    ///
+    /// The formatter is called for each threshold value when the legend
+    /// displays threshold labels (``LabelVisibility/thresholds`` or
+    /// ``LabelVisibility/automatic`` with contour data). Use it to add
+    /// units, control precision, or provide domain-specific text:
+    ///
+    /// ```swift
+    /// HeatMapLegend(contours: contours)
+    ///     .labelFormatter { value in
+    ///         String(format: "%.1f°C", value)
+    ///     }
+    /// ```
+    ///
+    /// - Parameter formatter: A closure that converts a threshold value
+    ///   to a display string.
+    /// - Returns: A legend configured with the given formatter.
+    public func labelFormatter(
+        _ formatter: @escaping @Sendable (Double) -> String
+    ) -> HeatMapLegend {
+        var copy = self
+        copy._labelFormatter = formatter
         return copy
     }
 
@@ -266,9 +311,11 @@ public struct HeatMapLegend: View {
         switch resolvedLabelMode {
         case .thresholds:
             if let thresholds, let first = thresholds.first {
-                return formatThreshold(first)
+                return _labelFormatter?(first) ?? formatThreshold(first)
             }
             return "Low"
+        case .customMinMax(let low, _):
+            return low
         default:
             return "Low"
         }
@@ -278,9 +325,11 @@ public struct HeatMapLegend: View {
         switch resolvedLabelMode {
         case .thresholds:
             if let thresholds, let last = thresholds.last {
-                return formatThreshold(last)
+                return _labelFormatter?(last) ?? formatThreshold(last)
             }
             return "High"
+        case .customMinMax(_, let high):
+            return high
         default:
             return "High"
         }

@@ -93,4 +93,27 @@ struct HeatMapLegendTests {
             .labels(.hidden)
         _ = legend.body
     }
+
+    @MainActor
+    @Test func customMinMaxLabelsDoNotCrash() {
+        let legend = HeatMapLegend(gradient: .thermal, levelCount: 10)
+            .labels(.customMinMax(low: "Cold", high: "Hot"))
+        _ = legend.body
+    }
+
+    @MainActor
+    @Test func labelFormatterModifierDoesNotCrash() {
+        let contours = HeatMapContours.compute(
+            from: tightCluster,
+            configuration: HeatMapConfiguration(
+                contourLevels: 8,
+                gradient: .thermal
+            )
+        )
+        let legend = HeatMapLegend(contours: contours)
+            .labelFormatter { value in
+                String(format: "%.1f°C", value)
+            }
+        _ = legend.body
+    }
 }

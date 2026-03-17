@@ -189,6 +189,22 @@ HeatMapLegend(gradient: .thermal, levelCount: 10)
     .labels(.hidden)
 ```
 
+Format threshold labels with units or custom precision:
+
+```swift
+HeatMapLegend(contours: computedContours)
+    .labelFormatter { value in
+        String(format: "%.1f°C", value)
+    }
+```
+
+Use custom endpoint labels instead of "Low" and "High":
+
+```swift
+HeatMapLegend(gradient: .thermal, levelCount: 10)
+    .labels(.customMinMax(low: "Cold", high: "Hot"))
+```
+
 ### Built-in Gradients
 
 | Gradient | Colors |
