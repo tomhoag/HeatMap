@@ -39,7 +39,12 @@ import SwiftUI
 /// ### Accessing Geometry
 ///
 /// - ``coordinates``
-public struct HeatMapContour: Sendable, Identifiable {
+public struct HeatMapContour: Sendable, Identifiable, Equatable {
+    /// Two contours are equal when they share the same ``id``.
+    public static func == (lhs: HeatMapContour, rhs: HeatMapContour) -> Bool {
+        lhs.id == rhs.id
+    }
+
     /// A unique identifier for this contour polygon.
     public let id: UUID
 
@@ -112,7 +117,16 @@ public struct HeatMapContour: Sendable, Identifiable {
 /// ### Contour Data
 ///
 /// - ``HeatMapContour``
-public struct HeatMapContours: Sendable {
+public struct HeatMapContours: Sendable, Equatable {
+    /// Two contour results are equal when they have the same level count,
+    /// gradient, and polygon identities (in order).
+    public static func == (lhs: HeatMapContours, rhs: HeatMapContours) -> Bool {
+        lhs.levels == rhs.levels
+            && lhs._gradient == rhs._gradient
+            && lhs.polygons.count == rhs.polygons.count
+            && zip(lhs.polygons, rhs.polygons).allSatisfy { $0.id == $1.id }
+    }
+
     /// The extracted contour polygons (internal representation).
     let polygons: [ContourPolygon]
 

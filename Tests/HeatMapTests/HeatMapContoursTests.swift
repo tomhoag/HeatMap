@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import HeatMap
 
@@ -52,5 +53,73 @@ struct HeatMapContoursTests {
     @Test func asyncComputeFromEmptyPoints() async {
         let contours = await HeatMapContours.compute(from: [TestPoint]())
         #expect(contours.polygons.isEmpty)
+    }
+
+    // MARK: - Equatable
+
+    @Test func contoursEqualToSelf() {
+        let contours = HeatMapContours.compute(from: tightCluster)
+        #expect(contours == contours)
+    }
+
+    @Test func contoursNotEqualWhenRecomputed() {
+        let a = HeatMapContours.compute(from: tightCluster)
+        let b = HeatMapContours.compute(from: tightCluster)
+        // Each computation generates fresh UUIDs, so they differ
+        #expect(a != b)
+    }
+
+    @Test func contoursNotEqualWhenDifferentLevels() {
+        let a = HeatMapContours.compute(
+            from: tightCluster,
+            configuration: HeatMapConfiguration(contourLevels: 5)
+        )
+        let b = HeatMapContours.compute(
+            from: tightCluster,
+            configuration: HeatMapConfiguration(contourLevels: 10)
+        )
+        #expect(a != b)
+    }
+
+    @Test func contoursNotEqualWhenDifferentGradient() {
+        let a = HeatMapContours.compute(
+            from: tightCluster,
+            configuration: HeatMapConfiguration(gradient: .thermal)
+        )
+        let b = HeatMapContours.compute(
+            from: tightCluster,
+            configuration: HeatMapConfiguration(gradient: .cool)
+        )
+        #expect(a != b)
+    }
+
+    @Test func contourEqualByID() {
+        let contours = HeatMapContours.compute(from: tightCluster)
+        guard let first = contours.contours.first else {
+            Issue.record("Expected at least one contour")
+            return
+        }
+        let copy = HeatMapContour(
+            id: first.id,
+            level: first.level,
+            threshold: first.threshold,
+            coordinates: first.coordinates
+        )
+        #expect(first == copy)
+    }
+
+    @Test func contourNotEqualWithDifferentID() {
+        let contours = HeatMapContours.compute(from: tightCluster)
+        guard let first = contours.contours.first else {
+            Issue.record("Expected at least one contour")
+            return
+        }
+        let different = HeatMapContour(
+            id: UUID(),
+            level: first.level,
+            threshold: first.threshold,
+            coordinates: first.coordinates
+        )
+        #expect(first != different)
     }
 }
