@@ -14,7 +14,7 @@ import SwiftUI
 /// ``threshold``, and an array of geographic ``coordinates`` forming
 /// a closed polygon.
 ///
-/// You don't create `HeatMapContour` values directly. Instead, access
+/// You don't create `HeatMapPolygon` values directly. Instead, access
 /// them through ``HeatMapContours/contours`` after computing contours:
 ///
 /// ```swift
@@ -39,9 +39,9 @@ import SwiftUI
 /// ### Accessing Geometry
 ///
 /// - ``coordinates``
-public struct HeatMapContour: Sendable, Identifiable, Equatable {
+public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
     /// Two contours are equal when they share the same ``id``.
-    public static func == (lhs: HeatMapContour, rhs: HeatMapContour) -> Bool {
+    public static func == (lhs: HeatMapPolygon, rhs: HeatMapPolygon) -> Bool {
         lhs.id == rhs.id
     }
 
@@ -116,7 +116,7 @@ public struct HeatMapContour: Sendable, Identifiable, Equatable {
 ///
 /// ### Contour Data
 ///
-/// - ``HeatMapContour``
+/// - ``HeatMapPolygon``
 public struct HeatMapContours: Sendable, Equatable {
     /// Two contour results are equal when they have the same level count,
     /// gradient, and polygon identities (in order).
@@ -136,7 +136,7 @@ public struct HeatMapContours: Sendable, Equatable {
     /// The gradient used during computation (internal storage).
     let _gradient: HeatMapGradient
 
-    /// The contour polygons as ``HeatMapContour`` values.
+    /// The contour polygons as ``HeatMapPolygon`` values.
     ///
     /// Polygons are ordered from lowest level (outermost) to highest
     /// (innermost). Multiple polygons may share the same level if the
@@ -145,9 +145,9 @@ public struct HeatMapContours: Sendable, Equatable {
     /// Use this property to access the underlying contour geometry for
     /// hit testing, exporting polygon data, or building custom
     /// visualizations outside of ``HeatMapLayer``.
-    public var contours: [HeatMapContour] {
+    public var contours: [HeatMapPolygon] {
         polygons.map { polygon in
-            HeatMapContour(
+            HeatMapPolygon(
                 id: polygon.id,
                 level: polygon.level,
                 threshold: polygon.threshold,
