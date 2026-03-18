@@ -323,7 +323,7 @@ A minimal integration showing the least code needed to get a heat map on screen 
 
 ### HeatMapExample
 
-A full-featured demo that loads GSOD (Global Summary of the Day) weather station data from a bundled JSON file. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, render mode, isoline color, and smoothing in real time.
+A full-featured demo that ships with four CONUS weather event datasets (2021 Texas Freeze, 2021 PNW Heat Dome, 2024 Polar Vortex, 2024 Spring Front). A control panel (tap the **Controls** button) lets you switch datasets and adjust the radius, contour levels, color gradient, fill opacity, render mode, isoline color, and smoothing in real time.
 
 ## Documentation
 
