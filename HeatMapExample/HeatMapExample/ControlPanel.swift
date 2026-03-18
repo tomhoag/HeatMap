@@ -59,7 +59,7 @@ struct ControlPanel: View {
     // MARK: - Compact Layout (iPhone)
 
     private var compactContent: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             // Heat Map section
             Text("Heat Map")
                 .font(.subheadline.weight(.medium))
@@ -80,6 +80,16 @@ struct ControlPanel: View {
                     }
                 }
             }
+
+            menuRow("Line Color") {
+                Picker("Line Color", selection: $selectedIsolineColor) {
+                    ForEach(IsolineColorOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+            }
+            .opacity(selectedRenderMode == .filled ? 0 : 1)
+            .disabled(selectedRenderMode == .filled)
 
             LabeledContent("Radius: \(Int(radius / 1000))km") {
                 Slider(value: $radius, in: 50_000...300_000, step: 10_000)
@@ -115,16 +125,6 @@ struct ControlPanel: View {
 
             LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
                 Slider(value: $fillOpacity, in: 0...1, step: 0.05)
-            }
-
-            if selectedRenderMode != .filled {
-                menuRow("Line Color") {
-                    Picker("Line Color", selection: $selectedIsolineColor) {
-                        ForEach(IsolineColorOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
-                        }
-                    }
-                }
             }
 
             Divider()
@@ -179,6 +179,18 @@ struct ControlPanel: View {
                         }
                     }
                 }
+
+                menuRow("Line Color") {
+                    Picker("Line Color", selection: $selectedIsolineColor) {
+                        ForEach(IsolineColorOption.allCases) { option in
+                            Text(option.rawValue).tag(option)
+                        }
+                    }
+                }
+                .opacity(selectedRenderMode == .filled ? 0 : 1)
+                .disabled(selectedRenderMode == .filled)
+
+                Spacer()
             }
 
             HStack(spacing: 12) {
@@ -215,20 +227,12 @@ struct ControlPanel: View {
                         }
                     }
                 }
+
+                Spacer()
             }
 
             LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
                 Slider(value: $fillOpacity, in: 0...1, step: 0.05)
-            }
-
-            if selectedRenderMode != .filled {
-                menuRow("Line Color") {
-                    Picker("Line Color", selection: $selectedIsolineColor) {
-                        ForEach(IsolineColorOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
-                        }
-                    }
-                }
             }
 
             Divider()
@@ -256,6 +260,8 @@ struct ControlPanel: View {
                         legendLabels = newValue.visibility
                     }
                 }
+
+                Spacer()
             }
         }
     }
