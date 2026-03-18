@@ -47,8 +47,7 @@ struct ContentView: View {
         HeatMapConfiguration(
             radius: radius,
             contourLevels: Int(contourLevels),
-            levelSpacing: selectedSpacing.spacing,
-            gridResolution: 120,
+            levelSpacing: selectedSpacing.spacing, gridResolution: 120,
             gradient: selectedGradient.gradient,
             fillOpacity: fillOpacity,
             stroke: selectedStroke.stroke,

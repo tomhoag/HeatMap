@@ -8,120 +8,6 @@
 import HeatMap
 import SwiftUI
 
-enum GradientOption: String, CaseIterable, Identifiable {
-    case thermal = "Thermal"
-    case warm = "Warm"
-    case cool = "Cool"
-
-    var id: String { rawValue }
-
-    var gradient: HeatMapGradient {
-        switch self {
-        case .thermal: .thermal
-        case .warm: .warm
-        case .cool: .cool
-        }
-    }
-}
-
-enum SmootherOption: String, CaseIterable, Identifiable {
-    case none = "None"
-    case chaikin1 = "Chaikin 1"
-    case chaikin2 = "Chaikin 2"
-    case chaikin3 = "Chaikin 3"
-
-    var id: String { rawValue }
-
-    var smoother: PolygonSmoother {
-        switch self {
-        case .none: .none
-        case .chaikin1: .chaikin(iterations: 1)
-        case .chaikin2: .chaikin(iterations: 2)
-        case .chaikin3: .chaikin(iterations: 3)
-        }
-    }
-}
-
-enum StrokeOption: String, CaseIterable, Identifiable {
-    case none = "None"
-    case thin = "Thin"
-    case medium = "Medium"
-    case thick = "Thick"
-
-    var id: String { rawValue }
-
-    var stroke: HeatMapStroke {
-        switch self {
-        case .none: .none
-        case .thin: .styled(color: .black, lineWidth: 0.5)
-        case .medium: .styled(color: .black, lineWidth: 1)
-        case .thick: .styled(color: .black, lineWidth: 2)
-        }
-    }
-}
-
-enum RenderModeOption: String, CaseIterable, Identifiable {
-    case filled = "Filled"
-    case isolines = "Isolines"
-    case both = "Both"
-
-    var id: String { rawValue }
-
-    func renderMode(color: Color?) -> HeatMapRenderMode {
-        switch self {
-        case .filled: .filled
-        case .isolines: .isolines(color: color)
-        case .both: .filledWithIsolines(color: color)
-        }
-    }
-}
-
-enum IsolineColorOption: String, CaseIterable, Identifiable {
-    case gradient = "Gradient"
-    case black = "Black"
-    case white = "White"
-
-    var id: String { rawValue }
-
-    var color: Color? {
-        switch self {
-        case .gradient: nil
-        case .black: .black
-        case .white: .white
-        }
-    }
-}
-
-enum SpacingOption: String, CaseIterable, Identifiable {
-    case linear = "Linear"
-    case logarithmic = "Logarithmic"
-
-    var id: String { rawValue }
-
-    var spacing: LevelSpacing {
-        switch self {
-        case .linear: .linear
-        case .logarithmic: .logarithmic
-        }
-    }
-}
-
-enum LabelVisibilityOption: String, CaseIterable, Identifiable {
-    case thresholds = "Thresholds"
-    case lowHigh = "Low/High"
-    case hidden = "Hidden"
-
-    var id: String { rawValue }
-
-    var visibility: HeatMapLegend.LabelVisibility {
-        switch self {
-        case .thresholds: .thresholds
-        case .lowHigh: .lowHigh
-        case .hidden: .hidden
-        }
-    }
-}
-
 struct ControlPanel: View {
     @Binding var radius: Double
     @Binding var contourLevels: Double
@@ -159,60 +45,81 @@ struct ControlPanel: View {
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Picker("Gradient", selection: $selectedGradient) {
-                    ForEach(GradientOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Picker("Smoothing", selection: $selectedSmoother) {
-                    ForEach(SmootherOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Picker("Stroke", selection: $selectedStroke) {
-                    ForEach(StrokeOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Picker("Render", selection: $selectedRenderMode) {
-                    ForEach(RenderModeOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                if selectedRenderMode != .filled {
-                    Picker("Line Color", selection: $selectedIsolineColor) {
-                        ForEach(IsolineColorOption.allCases) { option in
+                LabeledContent("Render:") {
+                    Picker("Render", selection: $selectedRenderMode) {
+                        ForEach(RenderModeOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
                     .pickerStyle(.segmented)
                 }
 
-                LabeledContent("Radius: \(Int(radius / 1000))km") {
-                    Slider(value: $radius, in: 50_000...300_000, step: 10_000)
-                }
+                // Row 1: Radius, Levels, Smoothing
+                HStack(spacing: 12) {
+                    LabeledContent("Radius: \(Int(radius / 1000))km") {
+                        Slider(value: $radius, in: 50_000...300_000, step: 10_000)
+                    }
 
-                LabeledContent("Levels: \(Int(contourLevels))") {
-                    Slider(value: $contourLevels, in: 3...20, step: 1)
-                }
+                    LabeledContent("Levels: \(Int(contourLevels))") {
+                        Slider(value: $contourLevels, in: 3...20, step: 1)
+                    }
 
-                Picker("Spacing", selection: $selectedSpacing) {
-                    ForEach(SpacingOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
+                    LabeledContent("Smoothing:") {
+                        Picker("Smoothing", selection: $selectedSmoother) {
+                            ForEach(SmootherOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
                     }
                 }
-                .pickerStyle(.segmented)
 
-                LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
-                    Slider(value: $fillOpacity, in: 0...1, step: 0.05)
+                // Row 2: Spacing, Gradient
+                HStack(spacing: 12) {
+                    LabeledContent("Spacing:") {
+                        Picker("Spacing", selection: $selectedSpacing) {
+                            ForEach(SpacingOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    LabeledContent("Gradient:") {
+                        Picker("Gradient", selection: $selectedGradient) {
+                            ForEach(GradientOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+
+                // Row 3: Stroke, Opacity
+                HStack(spacing: 12) {
+                    LabeledContent("Stroke:") {
+                        Picker("Stroke", selection: $selectedStroke) {
+                            ForEach(StrokeOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
+                        Slider(value: $fillOpacity, in: 0...1, step: 0.05)
+                    }
+                }
+
+                if selectedRenderMode != .filled {
+                    LabeledContent("Line Color:") {
+                        Picker("Line Color", selection: $selectedIsolineColor) {
+                            ForEach(IsolineColorOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
                 }
             }
 
@@ -224,13 +131,15 @@ struct ControlPanel: View {
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                HStack(spacing: 12) {
+                LabeledContent("Orientation:") {
                     Picker("Orientation", selection: $legendAxis) {
                         Text("Vertical").tag(Axis.vertical)
                         Text("Horizontal").tag(Axis.horizontal)
                     }
                     .pickerStyle(.segmented)
+                }
 
+                LabeledContent("Labels:") {
                     Picker("Labels", selection: $selectedLabelVisibility) {
                         ForEach(LabelVisibilityOption.allCases) { option in
                             Text(option.rawValue).tag(option)
@@ -246,4 +155,35 @@ struct ControlPanel: View {
         .padding()
         .glassEffect(in: .rect(cornerRadius: 16))
     }
+}
+
+#Preview {
+    @Previewable @State var radius: Double = 150_000
+    @Previewable @State var contourLevels: Double = 10
+    @Previewable @State var selectedGradient: GradientOption = .thermal
+    @Previewable @State var fillOpacity: Double = 1.0
+    @Previewable @State var selectedStroke: StrokeOption = .none
+    @Previewable @State var selectedRenderMode: RenderModeOption = .filled
+    @Previewable @State var selectedIsolineColor: IsolineColorOption = .gradient
+    @Previewable @State var selectedSpacing: SpacingOption = .linear
+    @Previewable @State var selectedSmoother: SmootherOption = .chaikin2
+    @Previewable @State var legendAxis: Axis = .vertical
+    @Previewable @State var legendLabels: HeatMapLegend.LabelVisibility = .thresholds
+    @Previewable @State var showControls = true
+
+    ControlPanel(
+        radius: $radius,
+        contourLevels: $contourLevels,
+        selectedGradient: $selectedGradient,
+        fillOpacity: $fillOpacity,
+        selectedStroke: $selectedStroke,
+        selectedRenderMode: $selectedRenderMode,
+        selectedIsolineColor: $selectedIsolineColor,
+        selectedSpacing: $selectedSpacing,
+        selectedSmoother: $selectedSmoother,
+        legendAxis: $legendAxis,
+        legendLabels: $legendLabels,
+        showControls: $showControls
+    )
+    .padding()
 }
