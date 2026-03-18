@@ -9,13 +9,16 @@ import Foundation
 
 /// Controls how contour thresholds are distributed across the density range.
 ///
-/// By default, thresholds are evenly spaced between the minimum and maximum
-/// density values (``linear``). Use ``logarithmic`` to concentrate more
-/// contour levels in the lower-density region, or ``custom(_:)`` to specify
-/// exact threshold values.
+/// The default is ``auto``, which inspects the density distribution and
+/// selects ``linear`` or ``quantile`` automatically. You can also choose
+/// a strategy explicitly, or provide exact threshold values with
+/// ``custom(_:)``.
 ///
 /// ```swift
-/// // Default linear spacing
+/// // Automatic (default) — picks linear or quantile based on data skew
+/// let config = HeatMapConfiguration(levelSpacing: .auto)
+///
+/// // Explicit linear spacing
 /// let config = HeatMapConfiguration(levelSpacing: .linear)
 ///
 /// // Logarithmic spacing for skewed distributions
@@ -29,14 +32,29 @@ import Foundation
 ///
 /// ### Spacing Strategies
 ///
+/// - ``auto``
 /// - ``linear``
 /// - ``logarithmic``
+/// - ``quantile``
 /// - ``custom(_:)``
 public enum LevelSpacing: Sendable, Hashable {
+    /// Automatically selects ``linear`` or ``quantile`` spacing based on
+    /// the density distribution.
+    ///
+    /// Measures the skew of the non-zero density values using the
+    /// mean-to-median ratio. When the ratio exceeds 2 (indicating the
+    /// high-density tail is pulling the mean well above the median),
+    /// ``quantile`` spacing is used so that sparse regions receive
+    /// contour coverage. Otherwise, ``linear`` spacing is used.
+    ///
+    /// This is the default. It produces good results for a wide range
+    /// of datasets without requiring manual tuning.
+    case auto
+
     /// Evenly spaced thresholds between the minimum and maximum density.
     ///
-    /// This is the default. It distributes `contourLevels` thresholds at
-    /// equal intervals across the density range.
+    /// Distributes `contourLevels` thresholds at equal intervals across
+    /// the density range.
     case linear
 
     /// Logarithmically spaced thresholds that concentrate more levels
@@ -80,6 +98,8 @@ public enum LevelSpacing: Sendable, Hashable {
 extension LevelSpacing: CustomStringConvertible {
     public var description: String {
         switch self {
+        case .auto:
+            return "auto"
         case .linear:
             return "linear"
         case .logarithmic:
@@ -110,6 +130,19 @@ extension LevelSpacing {
         guard range > 0 else { return [] }
 
         switch self {
+        case .auto:
+            let resolved = Self.autoResolvedSpacing(
+                densityValues: densityValues,
+                minDensity: minDensity,
+                range: range
+            )
+            return resolved.resolveThresholds(
+                levels: levels,
+                minDensity: minDensity,
+                maxDensity: maxDensity,
+                densityValues: densityValues
+            )
+
         case .linear:
             guard levels > 0 else { return [] }
             return (0..<levels).map { level in
@@ -146,6 +179,35 @@ extension LevelSpacing {
                 .sorted()
                 .removingDuplicates()
         }
+    }
+}
+
+extension LevelSpacing {
+    /// Determines whether `.auto` should resolve to `.linear` or `.quantile`
+    /// by measuring the skew of non-zero density values.
+    ///
+    /// A mean-to-median ratio above 2 indicates a right-skewed distribution
+    /// (e.g. dense coastal clusters with sparse interiors), which benefits
+    /// from quantile spacing. Otherwise, linear spacing is used.
+    static func autoResolvedSpacing(
+        densityValues: [Double],
+        minDensity: Double,
+        range: Double
+    ) -> LevelSpacing {
+        let epsilon = range * 1e-10
+        let nonZero = densityValues.filter { $0 > minDensity + epsilon }
+        guard nonZero.count >= 2 else { return .linear }
+
+        let sum = nonZero.reduce(0, +)
+        let mean = sum / Double(nonZero.count)
+
+        // Median via nth_element would be ideal, but sorting a small
+        // subset is fine for typical grid sizes (≤ 90K cells).
+        let sorted = nonZero.sorted()
+        let median = sorted[sorted.count / 2]
+
+        guard median > 0 else { return .linear }
+        return mean / median > 2.0 ? .quantile : .linear
     }
 }
 

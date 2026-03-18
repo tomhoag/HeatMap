@@ -22,7 +22,7 @@ struct ContentView: View {
     @State private var fillOpacity: Double = 0.8
     @State private var selectedRenderMode: RenderModeOption = .filled
     @State private var selectedIsolineColor: IsolineColorOption = .gradient
-    @State private var selectedSpacing: SpacingOption = .linear
+    @State private var selectedSpacing: SpacingOption = .auto
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
     @State private var legendLabels: HeatMapLegend.LabelVisibility = .thresholds

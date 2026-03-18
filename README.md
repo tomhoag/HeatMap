@@ -26,7 +26,7 @@ HeatMap is a native SwiftUI `MapContent` component — no image overlays, no UIK
 - **Works out of the box** — `HeatMapConfiguration.adaptive(for:)` inspects your data and picks a sensible radius and resolution automatically. Get a meaningful map before you've tuned anything.
 - **Async and cancellation-aware** — compute contours off the main thread with `async`/`await`. Switching configurations or navigating away cancels stale work automatically.
 - **Multiple render modes** — filled polygons, contour isolines, or both together. Four built-in color gradients plus a `HeatMapGradient(colors:)` API for your own.
-- **Fully configurable** — kernel radius, contour levels, grid resolution, level spacing (linear, logarithmic, quantile, or custom thresholds), fill opacity, and polygon smoothing are all adjustable.
+- **Fully configurable** — kernel radius, contour levels, grid resolution, level spacing (auto, linear, logarithmic, quantile, or custom thresholds), fill opacity, and polygon smoothing are all adjustable.
 - **Built-in legend** — `HeatMapLegend` renders the color scale with configurable orientation, label visibility, and custom endpoint text. Localization-ready out of the box.
 - **Hit testing** — query which contour levels contain a given coordinate, for tap-to-inspect interactions.
 - **Scales from city blocks to continents** — the same configuration API works whether your data spans a neighborhood or a country.
@@ -130,7 +130,7 @@ contours = try? await HeatMapContours.compute(from: points, configuration: confi
 |-----------|---------|-------------|
 | `radius` | `500` | Gaussian kernel radius in meters. Larger values produce smoother, more diffuse maps. |
 | `contourLevels` | `10` | Number of contour bands. More levels produce a finer gradient. |
-| `levelSpacing` | `.linear` | Threshold spacing strategy (`.linear`, `.logarithmic`, `.quantile`, or `.custom([Double])`). |
+| `levelSpacing` | `.auto` | Threshold spacing strategy (`.auto`, `.linear`, `.logarithmic`, `.quantile`, or `.custom([Double])`). |
 | `gridResolution` | `100` | Grid cells along the longer axis. Higher values increase detail and computation time. |
 | `gradient` | `.thermal` | Color gradient for mapping density to color. |
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
@@ -160,7 +160,17 @@ config.gradient = .cool
 
 The `levelSpacing` parameter controls how density thresholds are distributed between the grid's minimum and maximum values. Choosing the right strategy depends on your data distribution:
 
-#### Linear (default)
+#### Auto (default)
+
+Inspects the computed density grid and automatically selects linear or quantile spacing based on how skewed the distribution is. When the mean-to-median ratio of non-zero density values exceeds 2 (indicating high-density peaks pulling the average well above typical values), quantile spacing is used. Otherwise, linear spacing is used.
+
+```swift
+let config = HeatMapConfiguration(levelSpacing: .auto)
+```
+
+**Use when:** you don't know the characteristics of your data in advance, or you want reasonable results across a variety of datasets without manual tuning. This is the default.
+
+#### Linear
 
 Thresholds are evenly spaced across the density range. Best for data where points are distributed relatively uniformly and you want each contour band to represent the same density difference:
 

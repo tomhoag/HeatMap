@@ -3,6 +3,55 @@ import Testing
 
 struct LevelSpacingTests {
 
+    // MARK: - Auto
+
+    @Test func autoWithUniformDataUsesLinear() {
+        // Uniform values: mean ≈ median, so auto should pick linear
+        let values = (1...100).map { Double($0) }
+        let autoThresholds = LevelSpacing.auto.resolveThresholds(
+            levels: 5, minDensity: 0, maxDensity: 100, densityValues: values
+        )
+        let linearThresholds = LevelSpacing.linear.resolveThresholds(
+            levels: 5, minDensity: 0, maxDensity: 100, densityValues: values
+        )
+        #expect(autoThresholds == linearThresholds)
+    }
+
+    @Test func autoWithSkewedDataUsesQuantile() {
+        // 90% low values + 10% high values: mean >> median, so auto should pick quantile
+        let values = Array(repeating: 1.0, count: 90) + Array(repeating: 100.0, count: 10)
+        let autoThresholds = LevelSpacing.auto.resolveThresholds(
+            levels: 5, minDensity: 0, maxDensity: 100, densityValues: values
+        )
+        let quantileThresholds = LevelSpacing.quantile.resolveThresholds(
+            levels: 5, minDensity: 0, maxDensity: 100, densityValues: values
+        )
+        #expect(autoThresholds == quantileThresholds)
+    }
+
+    @Test func autoWithEmptyValuesReturnsLinear() {
+        // No density values: falls back to linear
+        let autoThresholds = LevelSpacing.auto.resolveThresholds(
+            levels: 5, minDensity: 0, maxDensity: 10, densityValues: []
+        )
+        let linearThresholds = LevelSpacing.linear.resolveThresholds(
+            levels: 5, minDensity: 0, maxDensity: 10
+        )
+        #expect(autoThresholds == linearThresholds)
+    }
+
+    @Test func autoDescription() {
+        #expect(String(describing: LevelSpacing.auto) == "auto")
+    }
+
+    @Test func autoEqualsAuto() {
+        #expect(LevelSpacing.auto == .auto)
+    }
+
+    @Test func autoNotEqualsLinear() {
+        #expect(LevelSpacing.auto != .linear)
+    }
+
     // MARK: - Linear
 
     @Test func linearProducesEvenlySpacedThresholds() {

@@ -73,8 +73,9 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// The threshold spacing strategy for contour levels.
     ///
     /// Controls how density thresholds are distributed between the grid's
-    /// minimum and maximum values. The default is ``LevelSpacing/linear``,
-    /// which spaces thresholds evenly.
+    /// minimum and maximum values. The default is ``LevelSpacing/auto``,
+    /// which inspects the density distribution and selects
+    /// ``LevelSpacing/linear`` or ``LevelSpacing/quantile`` automatically.
     ///
     /// When set to ``LevelSpacing/custom(_:)``, the
     /// ``contourLevels`` value is derived from the number of provided
@@ -135,7 +136,7 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///     Default: `10`. Overridden by the threshold count when
     ///     `levelSpacing` is ``LevelSpacing/custom(_:)``.
     ///   - levelSpacing: The threshold spacing strategy. Default:
-    ///     ``LevelSpacing/linear``.
+    ///     ``LevelSpacing/auto``.
     ///   - gridResolution: Grid cells along the longer axis. Minimum: `2`.
     ///     Default: `100`.
     ///   - gradient: The color gradient. Default: ``HeatMapGradient/thermal``.
@@ -150,7 +151,7 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     public init(
         radius: Double = 500,
         contourLevels: Int = 10,
-        levelSpacing: LevelSpacing = .linear,
+        levelSpacing: LevelSpacing = .auto,
         gridResolution: Int = 100,
         gradient: HeatMapGradient = .thermal,
         paddingFactor: Double = 1.5,
