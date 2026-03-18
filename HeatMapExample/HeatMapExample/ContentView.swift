@@ -19,7 +19,7 @@ struct ContentView: View {
     @State private var radius: Double = 500
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
-    @State private var fillOpacity: Double = 1.0
+    @State private var fillOpacity: Double = 0.8
     @State private var selectedRenderMode: RenderModeOption = .filled
     @State private var selectedIsolineColor: IsolineColorOption = .gradient
     @State private var selectedSpacing: SpacingOption = .linear
