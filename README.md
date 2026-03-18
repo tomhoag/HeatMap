@@ -1,6 +1,20 @@
 # HeatMap
 
-HeatMap turns raw coordinate data into beautiful, color-graded density maps inside SwiftUI's Map view — in just a few lines of code. Feed it any array of weighted locations and it handles the math: Gaussian kernel density estimation, marching squares contour extraction, and Chaikin polygon smoothing. The result is a smooth, layered heat map that scales from city blocks to continents.
+Add heat maps to SwiftUI's `Map` view with just a few lines of code:
+
+```swift
+Map {
+    HeatMapLayer(contours: contours)
+}
+.task {
+    let config = HeatMapConfiguration.adaptive(for: points)
+    contours = try? await HeatMapContours.compute(from: points, configuration: config)
+}
+```
+
+HeatMap is a native SwiftUI `MapContent` component — no image overlays, no UIKit bridging, no tile servers. It renders vector contour polygons directly inside `Map`, so you get smooth scaling, hit testing, and full integration with the MapKit camera, gestures, and annotations you already use.
+
+<!-- Add a screenshot: ![HeatMap screenshot](Assets/hero.png) -->
 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/tomhoag/HeatMap)
 
@@ -8,15 +22,14 @@ HeatMap turns raw coordinate data into beautiful, color-graded density maps insi
 
 ## Features
 
-- **Smooth, tunable density fields** — configurable kernel radius and grid resolution let you control how tightly or broadly the heat map responds to your data.
-- **Clean contour polygons** — marching squares extracts crisp level boundaries from the density field, and Chaikin smoothing eliminates the stair-step artifacts that make contours look blocky.
-- **Non-blocking computation** — the async `compute` method is fully cancellation-aware, so switching configurations or navigating away won't leave stale work running in the background.
-- **Flexible rendering** — display filled polygons, contour isolines, or both together, depending on whether you want a bold visual or a topographic look.
-- **Fine-tuned appearance** — dial in fill opacity and polygon stroke independently so the heat map layer sits comfortably over your base map without obscuring it.
-- **Ready-made and custom gradients** — thermal, warm, cool, and monochrome palettes work out of the box, and a simple `HeatMapGradient(colors:)` API lets you define your own.
-- **Zero-config quickstart** — `HeatMapConfiguration.adaptive(for:)` inspects your data and picks a sensible radius and resolution automatically, so you can get a meaningful map before you've tuned anything.
-- **Built-in legend** — a `HeatMapLegend` view renders the color scale alongside your map, with configurable orientation, label visibility, and custom endpoint text.
-- **Localization-ready** — legend labels use `String(localized:)` throughout, so your app's string catalog handles translations without any extra work.
+- **Drop-in `MapContent`** — `HeatMapLayer` works like any other `Map` content. No view representables, no coordinate conversions, no z-ordering hacks.
+- **Works out of the box** — `HeatMapConfiguration.adaptive(for:)` inspects your data and picks a sensible radius and resolution automatically. Get a meaningful map before you've tuned anything.
+- **Async and cancellation-aware** — compute contours off the main thread with `async`/`await`. Switching configurations or navigating away cancels stale work automatically.
+- **Multiple render modes** — filled polygons, contour isolines, or both together. Four built-in color gradients plus a `HeatMapGradient(colors:)` API for your own.
+- **Fully configurable** — kernel radius, contour levels, grid resolution, level spacing (linear, logarithmic, or custom thresholds), fill opacity, and polygon smoothing are all adjustable.
+- **Built-in legend** — `HeatMapLegend` renders the color scale with configurable orientation, label visibility, and custom endpoint text. Localization-ready out of the box.
+- **Hit testing** — query which contour levels contain a given coordinate, for tap-to-inspect interactions.
+- **Scales from city blocks to continents** — the same configuration API works whether your data spans a neighborhood or a country.
 
 ## Requirements
 
