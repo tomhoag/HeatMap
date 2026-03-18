@@ -8,17 +8,24 @@
 
 /* Begin PBXBuildFile section */
 		008D473F2F685F0000A682A5 /* HeatMap in Frameworks */ = {isa = PBXBuildFile; productRef = 008D473E2F685F0000A682A5 /* HeatMap */; };
+		AA00000100000001 /* HeatMap in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000B /* HeatMap */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0021F9EA2F685146005A85AD /* HeatMap.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = HeatMap.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		0021FA062F68592E005A85AD /* HeatMapExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HeatMapExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000100000002 /* SimpleHeatMapExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleHeatMapExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0021FA072F68592E005A85AD /* HeatMapExample */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = HeatMapExample;
+			sourceTree = "<group>";
+		};
+		AA00000100000003 /* SimpleHeatMapExample */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SimpleHeatMapExample;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -39,6 +46,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA00000100000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000100000001 /* HeatMap in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				0021FA072F68592E005A85AD /* HeatMapExample */,
+				AA00000100000003 /* SimpleHeatMapExample */,
 				0021FA112F685984005A85AD /* Frameworks */,
 				0021F9EB2F685146005A85AD /* Products */,
 			);
@@ -56,6 +72,7 @@
 			children = (
 				0021F9EA2F685146005A85AD /* HeatMap.framework */,
 				0021FA062F68592E005A85AD /* HeatMapExample.app */,
+				AA00000100000002 /* SimpleHeatMapExample.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -123,6 +140,29 @@
 			productReference = 0021FA062F68592E005A85AD /* HeatMapExample.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AA00000100000005 /* SimpleHeatMapExample */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000010000000A /* Build configuration list for PBXNativeTarget "SimpleHeatMapExample" */;
+			buildPhases = (
+				AA00000100000007 /* Sources */,
+				AA00000100000004 /* Frameworks */,
+				AA00000100000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000100000003 /* SimpleHeatMapExample */,
+			);
+			name = SimpleHeatMapExample;
+			packageProductDependencies = (
+				AA0000010000000B /* HeatMap */,
+			);
+			productName = SimpleHeatMapExample;
+			productReference = AA00000100000002 /* SimpleHeatMapExample.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -137,6 +177,9 @@
 						CreatedOnToolsVersion = 26.3;
 					};
 					0021FA052F68592E005A85AD = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					AA00000100000005 = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -160,6 +203,7 @@
 			targets = (
 				0021F9E92F685146005A85AD /* HeatMap */,
 				0021FA052F68592E005A85AD /* HeatMapExample */,
+				AA00000100000005 /* SimpleHeatMapExample */,
 			);
 		};
 /* End PBXProject section */
@@ -179,6 +223,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA00000100000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -190,6 +241,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0021FA022F68592E005A85AD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000100000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -480,6 +538,75 @@
 			};
 			name = Release;
 		};
+		AA00000100000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L6BVR86H7Q;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.offbyone.SimpleHeatMapExample;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA00000100000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L6BVR86H7Q;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = studio.offbyone.SimpleHeatMapExample;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -510,6 +637,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AA0000010000000A /* Build configuration list for PBXNativeTarget "SimpleHeatMapExample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000100000008 /* Debug */,
+				AA00000100000009 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -521,6 +657,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		008D473E2F685F0000A682A5 /* HeatMap */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HeatMap;
+		};
+		AA0000010000000B /* HeatMap */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HeatMap;
 		};
