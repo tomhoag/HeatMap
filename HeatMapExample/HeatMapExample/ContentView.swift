@@ -30,6 +30,7 @@ struct ContentView: View {
     @State private var showControls = false
     @State private var tapInfo: TapInfo?
     @Namespace private var namespace
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     /// Hide the legend when isolines use a uniform color — all lines
     /// look identical so a gradient bar adds no information.
@@ -145,7 +146,7 @@ struct ContentView: View {
                         .padding()
                 }
             }
-            .overlay(alignment: .bottomTrailing) {
+            .overlay(alignment: sizeClass == .compact ? .bottom : .bottomTrailing) {
                 GlassEffectContainer {
                     VStack(alignment: .trailing) {
                         if !showControls {
