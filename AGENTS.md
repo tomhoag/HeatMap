@@ -84,6 +84,11 @@ If SwiftData is configured to use CloudKit:
 - If installed, make sure SwiftLint returns no warnings or errors before committing.
 
 
+## Environment notes
+
+- `gh` (GitHub CLI) is installed via Homebrew. Use the full path `/opt/homebrew/bin/gh` if it is not found on `PATH`.
+
+
 ## Xcode MCP
 
 If the Xcode MCP is configured, prefer its tools over generic alternatives when working on this project:
