@@ -114,7 +114,7 @@ public struct HeatMapLegend: View {
         let grouped = Dictionary(grouping: polygons, by: { $0.level })
         let uniqueThresholds = grouped
             .sorted { $0.key < $1.key }
-            .map { $0.value.first!.threshold }
+            .compactMap { $0.value.first?.threshold }
         self.thresholds = uniqueThresholds.isEmpty ? nil : uniqueThresholds
     }
 

@@ -166,9 +166,7 @@ public struct HeatMapContours: Sendable, Equatable {
             minDensity: grid.minDensity,
             maxDensity: grid.maxDensity
         )
-        // Safe to force-try: Task.checkCancellation() is a no-op outside of a Task.
-        // swiftlint:disable:next force_try
-        let result = try! MarchingSquares.extractContours(
+        let result = MarchingSquares.extractContours(
             from: grid,
             thresholds: thresholds
         )
@@ -229,7 +227,7 @@ public struct HeatMapContours: Sendable, Equatable {
             )
 
             // 3. Contour extraction (checks between each level internally)
-            let result = try MarchingSquares.extractContours(
+            let result = try MarchingSquares.extractContoursCancellable(
                 from: grid,
                 thresholds: thresholds
             )

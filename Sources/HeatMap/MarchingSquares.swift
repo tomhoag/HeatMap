@@ -35,6 +35,45 @@ enum MarchingSquares {
     /// Extracts contour polygons from the density grid at the given
     /// thresholds.
     ///
+    /// This non-throwing variant is used by the synchronous
+    /// ``HeatMapContours/compute(from:configuration:)-swift.type.method``
+    /// path where cancellation checking is not needed.
+    ///
+    /// - Parameters:
+    ///   - grid: The density grid to extract contours from.
+    ///   - thresholds: The density threshold values, sorted ascending.
+    /// - Returns: All extracted polygons, sorted from lowest level
+    ///   (outermost) to highest (innermost).
+    static func extractContours(
+        from grid: DensityGrid,
+        thresholds: [Double]
+    ) -> [HeatMapPolygon] {
+        extractContoursCore(from: grid, thresholds: thresholds, checkCancellation: false)
+    }
+
+    /// Extracts contour polygons from the density grid at the given
+    /// thresholds, checking for Task cancellation between levels.
+    ///
+    /// Use this variant from async contexts where the calling Task may
+    /// be cancelled.
+    ///
+    /// - Parameters:
+    ///   - grid: The density grid to extract contours from.
+    ///   - thresholds: The density threshold values, sorted ascending.
+    /// - Returns: All extracted polygons, sorted from lowest level
+    ///   (outermost) to highest (innermost).
+    /// - Throws: `CancellationError` if the Task is cancelled.
+    static func extractContoursCancellable(
+        from grid: DensityGrid,
+        thresholds: [Double]
+    ) throws -> [HeatMapPolygon] {
+        let result = extractContoursCore(from: grid, thresholds: thresholds, checkCancellation: true)
+        try Task.checkCancellation()
+        return result
+    }
+
+    /// Core contour extraction implementation.
+    ///
     /// For each threshold, the algorithm:
     /// 1. Generates directed edge segments using the marching squares cases.
     /// 2. Assembles segments into closed polygon rings.
@@ -46,12 +85,16 @@ enum MarchingSquares {
     /// - Parameters:
     ///   - grid: The density grid to extract contours from.
     ///   - thresholds: The density threshold values, sorted ascending.
+    ///   - checkCancellation: Whether to check `Task.isCancelled` between
+    ///     threshold levels.
     /// - Returns: All extracted polygons, sorted from lowest level
-    ///   (outermost) to highest (innermost).
-    static func extractContours(
+    ///   (outermost) to highest (innermost). Returns an empty array if
+    ///   cancelled.
+    private static func extractContoursCore(
         from grid: DensityGrid,
-        thresholds: [Double]
-    ) throws -> [HeatMapPolygon] {
+        thresholds: [Double],
+        checkCancellation: Bool
+    ) -> [HeatMapPolygon] {
         guard grid.rows > 1, grid.columns > 1, !thresholds.isEmpty else {
             return []
         }
@@ -64,7 +107,7 @@ enum MarchingSquares {
         var allPolygons: [HeatMapPolygon] = []
 
         for (level, threshold) in thresholds.enumerated() {
-            try Task.checkCancellation()
+            if checkCancellation, Task.isCancelled { return allPolygons }
 
             let segments = generateSegments(grid: grid, threshold: threshold)
             let rings = assembleRings(from: segments)
@@ -148,7 +191,8 @@ enum MarchingSquares {
     /// Generates all directed edge segments for a given threshold.
     ///
     /// Rows are processed in parallel using `DispatchQueue.concurrentPerform`.
-    /// Each row writes to its own slot, so no synchronization is needed.
+    /// Each row writes to its own slot in a pre-allocated `Array`, so no
+    /// synchronization is needed.
     ///
     /// - Parameters:
     ///   - grid: The density grid.
@@ -161,63 +205,63 @@ enum MarchingSquares {
         let rowCount = grid.rows - 1
         guard rowCount > 0 else { return [] }
 
-        // Pre-allocate one array per row to collect segments without contention.
-        // Each concurrent iteration writes only to its own index, so this is safe.
-        nonisolated(unsafe) let rowSegments = UnsafeMutableBufferPointer<[Segment]>.allocate(capacity: rowCount)
-        rowSegments.initialize(repeating: [])
+        // Pre-allocate one slot per row. Each concurrent iteration writes
+        // only to its own index, so no synchronization is needed.
+        var rowSegments = Array(repeating: [Segment](), count: rowCount)
 
-        DispatchQueue.concurrentPerform(iterations: rowCount) { row in
-            var localSegments: [Segment] = []
+        rowSegments.withUnsafeMutableBufferPointer { buffer in
+            // Safe: each concurrent iteration writes to a distinct index.
+            nonisolated(unsafe) let baseAddress = buffer.baseAddress!
+            DispatchQueue.concurrentPerform(iterations: rowCount) { row in
+                var localSegments: [Segment] = []
 
-            for col in 0..<(grid.columns - 1) {
-                let tl = grid.value(row: row, col: col)
-                let tr = grid.value(row: row, col: col + 1)
-                let br = grid.value(row: row + 1, col: col + 1)
-                let bl = grid.value(row: row + 1, col: col)
+                for col in 0..<(grid.columns - 1) {
+                    let tl = grid.value(row: row, col: col)
+                    let tr = grid.value(row: row, col: col + 1)
+                    let br = grid.value(row: row + 1, col: col + 1)
+                    let bl = grid.value(row: row + 1, col: col)
 
-                var caseIndex = 0
-                if tl >= threshold { caseIndex |= 8 }
-                if tr >= threshold { caseIndex |= 4 }
-                if br >= threshold { caseIndex |= 2 }
-                if bl >= threshold { caseIndex |= 1 }
+                    var caseIndex = 0
+                    if tl >= threshold { caseIndex |= 8 }
+                    if tr >= threshold { caseIndex |= 4 }
+                    if br >= threshold { caseIndex |= 2 }
+                    if bl >= threshold { caseIndex |= 1 }
 
-                // Skip cases with no edges
-                guard caseIndex != 0, caseIndex != 15 else { continue }
+                    // Skip cases with no edges
+                    guard caseIndex != 0, caseIndex != 15 else { continue }
 
-                // Disambiguate saddle cases
-                let edges: [(Int, Int)]
-                if caseIndex == 5 {
-                    let center = (tl + tr + br + bl) / 4.0
-                    edges = center >= threshold ? saddleCase5Alt : edgeTable[5]
-                } else if caseIndex == 10 {
-                    let center = (tl + tr + br + bl) / 4.0
-                    edges = center >= threshold ? saddleCase10Alt : edgeTable[10]
-                } else {
-                    edges = edgeTable[caseIndex]
+                    // Disambiguate saddle cases
+                    let edges: [(Int, Int)]
+                    if caseIndex == 5 {
+                        let center = (tl + tr + br + bl) / 4.0
+                        edges = center >= threshold ? saddleCase5Alt : edgeTable[5]
+                    } else if caseIndex == 10 {
+                        let center = (tl + tr + br + bl) / 4.0
+                        edges = center >= threshold ? saddleCase10Alt : edgeTable[10]
+                    } else {
+                        edges = edgeTable[caseIndex]
+                    }
+
+                    let corners = (tl: tl, tr: tr, br: br, bl: bl)
+
+                    for (edgeA, edgeB) in edges {
+                        let start = interpolateEdge(
+                            edge: edgeA, row: row, col: col,
+                            corners: corners, threshold: threshold
+                        )
+                        let end = interpolateEdge(
+                            edge: edgeB, row: row, col: col,
+                            corners: corners, threshold: threshold
+                        )
+                        localSegments.append(Segment(start: start, end: end))
+                    }
                 }
 
-                let corners = (tl: tl, tr: tr, br: br, bl: bl)
-
-                for (edgeA, edgeB) in edges {
-                    let start = interpolateEdge(
-                        edge: edgeA, row: row, col: col,
-                        corners: corners, threshold: threshold
-                    )
-                    let end = interpolateEdge(
-                        edge: edgeB, row: row, col: col,
-                        corners: corners, threshold: threshold
-                    )
-                    localSegments.append(Segment(start: start, end: end))
-                }
+                baseAddress.advanced(by: row).pointee = localSegments
             }
-
-            rowSegments[row] = localSegments
         }
 
-        let segments = Array(rowSegments).flatMap { $0 }
-        rowSegments.deinitialize()
-        rowSegments.deallocate()
-        return segments
+        return rowSegments.flatMap { $0 }
     }
 
     /// Computes the interpolated point on a cell edge where the density
