@@ -150,7 +150,7 @@ struct ControlPanel: View {
     @Previewable @State var selectedGradient: GradientOption = .thermal
     @Previewable @State var fillOpacity: Double = 1.0
     @Previewable @State var selectedRenderMode: RenderModeOption = .filled
-    @Previewable @State var selectedIsolineColor: IsolineColorOption = .none
+    @Previewable @State var selectedIsolineColor: IsolineColorOption = .gradient
     @Previewable @State var selectedSpacing: SpacingOption = .linear
     @Previewable @State var selectedSmoother: SmootherOption = .chaikin2
     @Previewable @State var legendAxis: Axis = .vertical

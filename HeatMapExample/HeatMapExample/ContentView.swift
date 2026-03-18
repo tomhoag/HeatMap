@@ -21,7 +21,7 @@ struct ContentView: View {
     @State private var selectedGradient: GradientOption = .thermal
     @State private var fillOpacity: Double = 1.0
     @State private var selectedRenderMode: RenderModeOption = .filled
-    @State private var selectedIsolineColor: IsolineColorOption = .none
+    @State private var selectedIsolineColor: IsolineColorOption = .gradient
     @State private var selectedSpacing: SpacingOption = .linear
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
@@ -29,6 +29,17 @@ struct ContentView: View {
     @State private var showControls = false
     @State private var tapInfo: TapInfo?
     @Namespace private var namespace
+
+    /// Hide the legend when isolines use a uniform color — all lines
+    /// look identical so a gradient bar adds no information.
+    private var showLegend: Bool {
+        switch selectedRenderMode {
+        case .isolines:
+            return selectedIsolineColor == .gradient
+        case .filled, .both:
+            return true
+        }
+    }
 
     private var resolvedLegendLabels: HeatMapLegend.LabelVisibility {
         switch legendLabels {
@@ -119,10 +130,12 @@ struct ContentView: View {
                 }
             }
             .overlay(alignment: .topTrailing) {
-                if let contours {
+                if let contours, showLegend {
                     HeatMapLegend(contours: contours)
                         .axis(legendAxis)
                         .labels(resolvedLegendLabels)
+                        .padding(12)
+                        .glassEffect(in: .rect(cornerRadius: 12))
                         .padding()
                 }
             }

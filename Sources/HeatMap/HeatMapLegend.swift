@@ -41,7 +41,24 @@ import SwiftUI
 ///
 /// HeatMapLegend(gradient: .thermal, levelCount: 10)
 ///     .labels(.customLowHigh(low: "Cold", high: "Hot"))
+///
+/// HeatMapLegend(gradient: .thermal, levelCount: 10)
+///     .labelColor(.white)
 /// ```
+///
+/// ### Legend Visibility with Isoline Render Modes
+///
+/// When the render mode is ``HeatMapRenderMode/isolines(lineWidth:color:)``
+/// with a uniform `color` (e.g. `.black` or `.white`), every contour line
+/// looks the same regardless of its level. In that case the gradient legend
+/// provides no useful information and should be hidden. When `color` is
+/// `nil` (the default), each isoline is colored by the gradient so the
+/// legend remains meaningful.
+///
+/// For ``HeatMapRenderMode/filled`` and
+/// ``HeatMapRenderMode/filledWithIsolines(lineWidth:color:)`` modes the
+/// legend is always appropriate because the filled polygons carry gradient
+/// color information.
 ///
 /// ## Topics
 ///
@@ -54,6 +71,7 @@ import SwiftUI
 ///
 /// - ``axis(_:)``
 /// - ``labels(_:)``
+/// - ``labelColor(_:)``
 /// - ``LabelVisibility``
 public struct HeatMapLegend: View {
     private let gradient: HeatMapGradient
@@ -62,6 +80,7 @@ public struct HeatMapLegend: View {
 
     private var axis: Axis = .vertical
     private var labelVisibility: LabelVisibility = .thresholds
+    private var labelColor: Color = .primary
 
     /// Controls which labels are shown alongside the gradient bar.
     public enum LabelVisibility: Sendable, Hashable {
@@ -140,6 +159,17 @@ public struct HeatMapLegend: View {
         return copy
     }
 
+    /// Sets the color used for legend labels.
+    ///
+    /// - Parameter color: The color to apply to "Low"/"High", threshold,
+    ///   and custom labels. Default: `.primary`.
+    /// - Returns: A legend configured with the given label color.
+    public func labelColor(_ color: Color) -> HeatMapLegend {
+        var copy = self
+        copy.labelColor = color
+        return copy
+    }
+
     public var body: some View {
         if axis == .vertical {
             verticalLayout
@@ -166,11 +196,13 @@ public struct HeatMapLegend: View {
         VStack {
             Text(highLabel)
                 .font(.caption2)
+                .foregroundStyle(labelColor)
 
             Spacer()
 
             Text(lowLabel)
                 .font(.caption2)
+                .foregroundStyle(labelColor)
         }
         .frame(height: 150)
     }
@@ -193,11 +225,13 @@ public struct HeatMapLegend: View {
         HStack {
             Text(lowLabel)
                 .font(.caption2)
+                .foregroundStyle(labelColor)
 
             Spacer()
 
             Text(highLabel)
                 .font(.caption2)
+                .foregroundStyle(labelColor)
         }
         .frame(width: 150)
     }

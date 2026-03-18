@@ -12,7 +12,7 @@ A Swift package for rendering geographic heat maps as filled contour polygons in
 - **Marching squares contour extraction** with Chaikin polygon smoothing
 - **Cooperative Task cancellation** — the async `compute` method checks for cancellation between pipeline stages (after the density grid, between contour levels, and between polygon smoothing passes), so cancelled Tasks exit early instead of running to completion
 - **Multiple render modes** — filled polygons, contour lines (isolines), or both
-- **Configurable fill opacity and polygon stroke** for fine-tuned rendering control
+- **Configurable fill opacity** for fine-tuned rendering control
 - **Built-in color gradients** (thermal, warm, cool, monochrome) plus custom gradient support
 - **Adaptive configuration** that auto-derives radius and resolution from your data
 - **Gradient legend view** with configurable axis and label visibility
@@ -122,7 +122,6 @@ contours = try? await HeatMapContours.compute(from: points, configuration: confi
 | `gradient` | `.thermal` | Color gradient for mapping density to color. |
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
 | `fillOpacity` | `1.0` | Fill opacity for contour polygons (`0`–`1`). |
-| `stroke` | `.none` | Polygon stroke style (`.none` or `.styled(color:lineWidth:)`). |
 | `renderMode` | `.filled` | Contour rendering mode (`.filled`, `.isolines(lineWidth:color:)`, or `.filledWithIsolines(lineWidth:color:)`). |
 | `smoother` | `.chaikin()` | Polygon smoother to reduce stair-step artifacts. |
 
@@ -256,6 +255,31 @@ HeatMapLegend(gradient: .thermal, levelCount: 10)
     .labels(.customLowHigh(low: "Cold", high: "Hot"))
 ```
 
+Override the label color for better contrast against dark or light map backgrounds:
+
+```swift
+HeatMapLegend(gradient: .thermal, levelCount: 10)
+    .labelColor(.white)
+```
+
+#### Legend Visibility with Isoline Render Modes
+
+When using `.isolines` with a uniform `color` (e.g. `.black` or `.white`), every contour line looks identical regardless of its level, so the gradient legend provides no useful information and should be hidden. When `color` is `nil` (the default), each isoline is colored by the gradient and the legend remains meaningful.
+
+For `.filled` and `.filledWithIsolines` modes the legend is always appropriate because the filled polygons carry gradient color information.
+
+```swift
+// Hide the legend when isolines use a uniform color
+var showLegend: Bool {
+    switch config.renderMode {
+    case .isolines(_, let color):
+        return color == nil   // gradient-colored → show; uniform color → hide
+    case .filled, .filledWithIsolines:
+        return true
+    }
+}
+```
+
 ### Built-in Gradients
 
 | Gradient | Colors |
@@ -286,7 +310,7 @@ The repository includes **HeatMapExample**, an iOS app that demonstrates the lib
 2. The project already references the local `HeatMap` package.
 3. Select an iOS simulator or device and run.
 
-The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, polygon stroke, render mode, and smoothing in real time.
+The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, render mode, isoline color, and smoothing in real time.
 
 ## Documentation
 

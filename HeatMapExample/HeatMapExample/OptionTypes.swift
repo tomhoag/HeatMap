@@ -59,7 +59,7 @@ enum RenderModeOption: String, CaseIterable, Identifiable {
 }
 
 enum IsolineColorOption: String, CaseIterable, Identifiable {
-    case none = "None"
+    case gradient = "Gradient"
     case black = "Black"
     case white = "White"
 
@@ -67,7 +67,7 @@ enum IsolineColorOption: String, CaseIterable, Identifiable {
 
     var color: Color? {
         switch self {
-        case .none: nil
+        case .gradient: nil
         case .black: .black
         case .white: .white
         }
