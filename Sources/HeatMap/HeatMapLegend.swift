@@ -64,7 +64,7 @@ public struct HeatMapLegend: View {
     private var labelVisibility: LabelVisibility = .thresholds
 
     /// Controls which labels are shown alongside the gradient bar.
-    public enum LabelVisibility: Sendable, Equatable {
+    public enum LabelVisibility: Sendable, Hashable {
         /// Always shows "Low" at the minimum end and "High" at the maximum end.
         case lowHigh
         /// Shows custom text at the minimum and maximum ends of the legend.

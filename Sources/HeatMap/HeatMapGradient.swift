@@ -77,8 +77,12 @@ public struct HeatMapGradient: Sendable, Hashable {
 extension HeatMapGradient {
     /// Returns the interpolated color for a given density fraction.
     ///
-    /// The fraction is linearly mapped across the gradient's color stops
-    /// and interpolated in the sRGB color space.
+    /// The fraction maps linearly to the gradient's color stops and is
+    /// interpolated in the sRGB color space. A fraction of `0` returns
+    /// the first color stop (typically transparent for built-in gradients),
+    /// and `1` returns the last (highest density). For example, with a
+    /// 10-level heat map, level 4 corresponds to a fraction of
+    /// `4 / 9 ≈ 0.44`.
     ///
     /// - Parameter fraction: A value from `0` (lowest density) to `1`
     ///   (highest density). Values outside this range are clamped.
