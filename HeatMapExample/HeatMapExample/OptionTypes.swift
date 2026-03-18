@@ -95,6 +95,7 @@ enum IsolineColorOption: String, CaseIterable, Identifiable {
 enum SpacingOption: String, CaseIterable, Identifiable {
     case linear = "Linear"
     case logarithmic = "Logarithmic"
+    case quantile = "Quantile"
 
     var id: String { rawValue }
 
@@ -102,6 +103,7 @@ enum SpacingOption: String, CaseIterable, Identifiable {
         switch self {
         case .linear: .linear
         case .logarithmic: .logarithmic
+        case .quantile: .quantile
         }
     }
 }

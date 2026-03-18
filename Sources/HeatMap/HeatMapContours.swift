@@ -154,7 +154,8 @@ public struct HeatMapContours: Sendable, Equatable {
         let thresholds = configuration.levelSpacing.resolveThresholds(
             levels: configuration.contourLevels,
             minDensity: grid.minDensity,
-            maxDensity: grid.maxDensity
+            maxDensity: grid.maxDensity,
+            densityValues: grid.values
         )
         let result = MarchingSquares.extractContours(
             from: grid,
@@ -213,7 +214,8 @@ public struct HeatMapContours: Sendable, Equatable {
             let thresholds = configuration.levelSpacing.resolveThresholds(
                 levels: configuration.contourLevels,
                 minDensity: grid.minDensity,
-                maxDensity: grid.maxDensity
+                maxDensity: grid.maxDensity,
+                densityValues: grid.values
             )
 
             // 3. Contour extraction (checks between each level internally)

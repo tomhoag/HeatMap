@@ -92,6 +92,76 @@ struct LevelSpacingTests {
         #expect(thresholds.isEmpty)
     }
 
+    // MARK: - Quantile
+
+    @Test func quantileProducesLowThresholdsForSkewedData() {
+        // 90 low-value cells + 10 high-value cells simulates sparse vs dense regions
+        let values = Array(repeating: 1.0, count: 90) + Array(repeating: 100.0, count: 10)
+        let thresholds = LevelSpacing.quantile.resolveThresholds(
+            levels: 4, minDensity: 0, maxDensity: 100, densityValues: values
+        )
+        #expect(!thresholds.isEmpty)
+        // First threshold should be near the low end since 90% of values are 1.0
+        #expect(thresholds[0] <= 10.0)
+    }
+
+    @Test func quantileThresholdsAreSorted() {
+        let values = (1...100).map { Double($0) }
+        let thresholds = LevelSpacing.quantile.resolveThresholds(
+            levels: 10, minDensity: 0, maxDensity: 100, densityValues: values
+        )
+        for i in 1..<thresholds.count {
+            #expect(thresholds[i] > thresholds[i - 1])
+        }
+    }
+
+    @Test func quantileThresholdsAreWithinRange() {
+        let values = (1...100).map { Double($0) }
+        let thresholds = LevelSpacing.quantile.resolveThresholds(
+            levels: 10, minDensity: 0, maxDensity: 100, densityValues: values
+        )
+        for t in thresholds {
+            #expect(t > 0)
+            #expect(t <= 100)
+        }
+    }
+
+    @Test func quantileWithEmptyValuesReturnsEmpty() {
+        let thresholds = LevelSpacing.quantile.resolveThresholds(
+            levels: 5, minDensity: 0, maxDensity: 10, densityValues: []
+        )
+        #expect(thresholds.isEmpty)
+    }
+
+    @Test func quantileWithZeroLevelsReturnsEmpty() {
+        let values = [1.0, 2.0, 3.0]
+        let thresholds = LevelSpacing.quantile.resolveThresholds(
+            levels: 0, minDensity: 0, maxDensity: 10, densityValues: values
+        )
+        #expect(thresholds.isEmpty)
+    }
+
+    @Test func quantileDeduplicatesIdenticalValues() {
+        // All non-zero values the same — after dedup there's at most 1 threshold
+        let values = Array(repeating: 5.0, count: 100)
+        let thresholds = LevelSpacing.quantile.resolveThresholds(
+            levels: 10, minDensity: 0, maxDensity: 10, densityValues: values
+        )
+        #expect(thresholds.count <= 1)
+    }
+
+    @Test func quantileDescription() {
+        #expect(String(describing: LevelSpacing.quantile) == "quantile")
+    }
+
+    @Test func quantileEqualsQuantile() {
+        #expect(LevelSpacing.quantile == .quantile)
+    }
+
+    @Test func quantileNotEqualsLinear() {
+        #expect(LevelSpacing.quantile != .linear)
+    }
+
     // MARK: - Edge Cases
 
     @Test func zeroRangeReturnsEmpty() {

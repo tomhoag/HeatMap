@@ -48,6 +48,21 @@ public enum LevelSpacing: Sendable, Hashable {
     /// where `base = levels + 1` and `fraction = (level + 1) / (levels + 1)`.
     case logarithmic
 
+    /// Quantile-based thresholds that distribute contour levels across
+    /// equal portions of the non-zero density values.
+    ///
+    /// Instead of dividing the density *range* evenly, this strategy
+    /// examines the actual distribution of grid cell values and places
+    /// each threshold so that approximately the same number of non-zero
+    /// cells fall between consecutive levels. This ensures contours
+    /// appear even in sparse regions where density values are far below
+    /// the global maximum.
+    ///
+    /// Useful for datasets with highly skewed density distributions,
+    /// such as weather station networks where coastal clusters produce
+    /// density values orders of magnitude higher than interior regions.
+    case quantile
+
     /// User-specified threshold values.
     ///
     /// The provided values are absolute density values. At extraction time,
@@ -69,6 +84,8 @@ extension LevelSpacing: CustomStringConvertible {
             return "linear"
         case .logarithmic:
             return "logarithmic"
+        case .quantile:
+            return "quantile"
         case .custom(let thresholds):
             return "custom(\(thresholds.count) thresholds)"
         }
@@ -86,7 +103,8 @@ extension LevelSpacing {
     func resolveThresholds(
         levels: Int,
         minDensity: Double,
-        maxDensity: Double
+        maxDensity: Double,
+        densityValues: [Double] = []
     ) -> [Double] {
         let range = maxDensity - minDensity
         guard range > 0 else { return [] }
@@ -109,6 +127,18 @@ extension LevelSpacing {
                 let logFraction = (pow(base, fraction) - 1.0) / denom
                 return minDensity + range * logFraction
             }
+
+        case .quantile:
+            guard levels > 0 else { return [] }
+            let epsilon = range * 1e-10
+            let nonZero = densityValues.filter { $0 > minDensity + epsilon }.sorted()
+            guard !nonZero.isEmpty else { return [] }
+            return (0..<levels).compactMap { level in
+                let fraction = Double(level + 1) / Double(levels + 1)
+                let index = min(Int(fraction * Double(nonZero.count)), nonZero.count - 1)
+                return nonZero[index]
+            }
+            .removingDuplicates()
 
         case .custom(let thresholds):
             return thresholds
