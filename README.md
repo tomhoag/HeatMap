@@ -300,17 +300,17 @@ let custom = HeatMapGradient(colors: [
 ])
 ```
 
-## Example App
+## Example Apps
 
-The repository includes **HeatMapExample**, an iOS app that demonstrates the library with GSOD (Global Summary of the Day) weather station data plotted on a map.
+The repository includes two example apps in `HeatMapExample/HeatMap.xcodeproj`. Both targets reference the local `HeatMap` package — open the project in Xcode, choose a scheme, and run.
 
-### Running the Example
+### SimpleHeatMapExample
 
-1. Open `HeatMapExample/HeatMap.xcodeproj` in Xcode.
-2. The project already references the local `HeatMap` package.
-3. Select an iOS simulator or device and run.
+A minimal example showing the least amount of code needed to get a heat map on screen. It defines a `HeatMapable` data type, computes contours with an adaptive configuration, and renders them inside a `Map` — no control panels, legends, or file loading. Start here to understand the basic integration.
 
-The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, render mode, isoline color, and smoothing in real time.
+### HeatMapExample
+
+A full-featured demo that loads GSOD (Global Summary of the Day) weather station data from a bundled JSON file. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, render mode, isoline color, and smoothing in real time.
 
 ## Documentation
 
