@@ -5,9 +5,9 @@ import PackageDescription
 let package = Package(
     name: "HeatMap",
     platforms: [
-        .iOS(.v18),
-        .macOS(.v15),
-        .visionOS(.v2),
+        .iOS(.v17),
+        .macOS(.v14),
+        .visionOS(.v1),
     ],
     products: [
         .library(

@@ -1,6 +1,6 @@
 # HeatMap
 
-A Swift package for rendering geographic heat maps as filled contour polygons inside SwiftUI `Map` views. It uses Gaussian kernel density estimation and the marching squares algorithm to turn weighted coordinate data into smooth, color-graded contour layers.
+HeatMap turns raw coordinate data into beautiful, color-graded density maps inside SwiftUI's Map view — in just a few lines of code. Feed it any array of weighted locations and it handles the math: Gaussian kernel density estimation, marching squares contour extraction, and Chaikin polygon smoothing. The result is a smooth, layered heat map that scales from city blocks to continents.
 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/tomhoag/HeatMap)
 
@@ -8,20 +8,20 @@ A Swift package for rendering geographic heat maps as filled contour polygons in
 
 ## Features
 
-- **Gaussian kernel density estimation** with configurable radius and grid resolution
-- **Marching squares contour extraction** with Chaikin polygon smoothing
-- **Cooperative Task cancellation** — the async `compute` method checks for cancellation between pipeline stages (after the density grid, between contour levels, and between polygon smoothing passes), so cancelled Tasks exit early instead of running to completion
-- **Multiple render modes** — filled polygons, contour lines (isolines), or both
-- **Configurable fill opacity** for fine-tuned rendering control
-- **Built-in color gradients** (thermal, warm, cool, monochrome) plus custom gradient support
-- **Adaptive configuration** that auto-derives radius and resolution from your data
-- **Gradient legend view** with configurable axis and label visibility
-- **Localized strings** — user-facing legend labels use `String(localized:)` so consuming apps can provide translations via their string catalogs
+- **Smooth, tunable density fields** — configurable kernel radius and grid resolution let you control how tightly or broadly the heat map responds to your data.
+- **Clean contour polygons** — marching squares extracts crisp level boundaries from the density field, and Chaikin smoothing eliminates the stair-step artifacts that make contours look blocky.
+- **Non-blocking computation** — the async `compute` method is fully cancellation-aware, so switching configurations or navigating away won't leave stale work running in the background.
+- **Flexible rendering** — display filled polygons, contour isolines, or both together, depending on whether you want a bold visual or a topographic look.
+- **Fine-tuned appearance** — dial in fill opacity and polygon stroke independently so the heat map layer sits comfortably over your base map without obscuring it.
+- **Ready-made and custom gradients** — thermal, warm, cool, and monochrome palettes work out of the box, and a simple `HeatMapGradient(colors:)` API lets you define your own.
+- **Zero-config quickstart** — `HeatMapConfiguration.adaptive(for:)` inspects your data and picks a sensible radius and resolution automatically, so you can get a meaningful map before you've tuned anything.
+- **Built-in legend** — a `HeatMapLegend` view renders the color scale alongside your map, with configurable orientation, label visibility, and custom endpoint text.
+- **Localization-ready** — legend labels use `String(localized:)` throughout, so your app's string catalog handles translations without any extra work.
 
 ## Requirements
 
 - iOS 17+ / macOS 14+ / visionOS 1+
-- Swift 6.2+
+- Swift 6.0+
 - Xcode 16+
 
 ## Installation
@@ -306,7 +306,7 @@ The repository includes two example apps in `HeatMapExample/HeatMap.xcodeproj`. 
 
 ### SimpleHeatMapExample
 
-A minimal example showing the least amount of code needed to get a heat map on screen. It defines a `HeatMapable` data type, computes contours with an adaptive configuration, and renders them inside a `Map` — no control panels, legends, or file loading. Start here to understand the basic integration.
+A minimal integration showing the least code needed to get a heat map on screen — no control panels, no file loading. Start here.
 
 ### HeatMapExample
 
