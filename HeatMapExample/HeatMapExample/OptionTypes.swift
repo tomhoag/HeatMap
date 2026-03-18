@@ -8,6 +8,24 @@
 import HeatMap
 import SwiftUI
 
+enum DatasetOption: String, CaseIterable, Identifiable {
+    case texasFreeze = "Texas Freeze"
+    case pnwHeatDome = "PNW Heat Dome"
+    case polarVortex = "Polar Vortex"
+    case springFront = "Spring Front"
+
+    var id: String { rawValue }
+
+    var resourceName: String {
+        switch self {
+        case .texasFreeze: "heatmap_2021-02-13_texas_freeze"
+        case .pnwHeatDome: "heatmap_2021-06-29_pnw_heat_dome"
+        case .polarVortex: "heatmap_2024-01-15_polar_vortex"
+        case .springFront: "heatmap_2024-04-03_spring_front"
+        }
+    }
+}
+
 enum GradientOption: String, CaseIterable, Identifiable {
     case thermal = "Thermal"
     case warm = "Warm"

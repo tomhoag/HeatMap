@@ -16,6 +16,7 @@ struct GSODLoader {
     struct RawPoint: Decodable {
         let latitude: Double
         let longitude: Double
+        let value: Double
         let weight: Double
     }
 
@@ -49,7 +50,7 @@ struct GSODLoader {
                     latitude: raw.latitude,
                     longitude: raw.longitude
                 ),
-                weight: raw.weight
+                weight: raw.value - file.valueMin
             )
         }
         return Result(

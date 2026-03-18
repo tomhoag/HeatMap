@@ -9,6 +9,7 @@ import HeatMap
 import SwiftUI
 
 struct ControlPanel: View {
+    @Binding var selectedDataset: DatasetOption
     @Binding var radius: Double
     @Binding var contourLevels: Double
     @Binding var selectedGradient: GradientOption
@@ -44,13 +45,25 @@ struct ControlPanel: View {
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                LabeledContent("Render:") {
-                    Picker("Render", selection: $selectedRenderMode) {
-                        ForEach(RenderModeOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Text("Dataset:")
+                        Picker("Dataset", selection: $selectedDataset) {
+                            ForEach(DatasetOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
                         }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.segmented)
+
+                    LabeledContent("Render:") {
+                        Picker("Render", selection: $selectedRenderMode) {
+                            ForEach(RenderModeOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
                 }
 
                 // Row 1: Radius, Levels, Smoothing
@@ -118,23 +131,25 @@ struct ControlPanel: View {
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                LabeledContent("Orientation:") {
-                    Picker("Orientation", selection: $legendAxis) {
-                        Text("Vertical").tag(Axis.vertical)
-                        Text("Horizontal").tag(Axis.horizontal)
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                LabeledContent("Labels:") {
-                    Picker("Labels", selection: $selectedLabelVisibility) {
-                        ForEach(LabelVisibilityOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
+                HStack(spacing: 12) {
+                    LabeledContent("Orientation:") {
+                        Picker("Orientation", selection: $legendAxis) {
+                            Text("Vertical").tag(Axis.vertical)
+                            Text("Horizontal").tag(Axis.horizontal)
                         }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
-                    .onChange(of: selectedLabelVisibility) { _, newValue in
-                        legendLabels = newValue.visibility
+
+                    LabeledContent("Labels:") {
+                        Picker("Labels", selection: $selectedLabelVisibility) {
+                            ForEach(LabelVisibilityOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: selectedLabelVisibility) { _, newValue in
+                            legendLabels = newValue.visibility
+                        }
                     }
                 }
             }
@@ -145,6 +160,7 @@ struct ControlPanel: View {
 }
 
 #Preview {
+    @Previewable @State var selectedDataset: DatasetOption = .texasFreeze
     @Previewable @State var radius: Double = 150_000
     @Previewable @State var contourLevels: Double = 10
     @Previewable @State var selectedGradient: GradientOption = .thermal
@@ -158,6 +174,7 @@ struct ControlPanel: View {
     @Previewable @State var showControls = true
 
     ControlPanel(
+        selectedDataset: $selectedDataset,
         radius: $radius,
         contourLevels: $contourLevels,
         selectedGradient: $selectedGradient,

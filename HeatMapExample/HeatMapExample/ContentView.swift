@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
     @State private var legendLabels: HeatMapLegend.LabelVisibility = .thresholds
+    @State private var selectedDataset: DatasetOption = .texasFreeze
     @State private var showControls = false
     @State private var tapInfo: TapInfo?
     @Namespace private var namespace
@@ -98,8 +99,13 @@ struct ContentView: View {
                     showsTraffic: false
                 )
             )
-            .task {
-                loadPoints()
+            .task(id: selectedDataset) {
+                loadPoints(selectedDataset)
+                tapInfo = nil
+                contours = try? await HeatMapContours.compute(
+                    from: points,
+                    configuration: configuration
+                )
             }
             .task(id: configuration) {
                 guard !points.isEmpty else { return }
@@ -152,6 +158,7 @@ struct ContentView: View {
                             .glassEffectID("controls", in: namespace)
                         } else {
                             ControlPanel(
+                                selectedDataset: $selectedDataset,
                                 radius: $radius,
                                 contourLevels: $contourLevels,
                                 selectedGradient: $selectedGradient,
@@ -173,16 +180,17 @@ struct ContentView: View {
         }
     }
 
-    private func loadPoints() {
-        guard let url = Bundle.main.url(forResource: "heatmap_points", withExtension: "json"),
+    private func loadPoints(_ dataset: DatasetOption) {
+        guard let url = Bundle.main.url(forResource: dataset.resourceName, withExtension: "json"),
               let result = try? GSODLoader.load(from: url),
               !result.points.isEmpty else { return }
         points = result.points
         valueMin = result.valueMin
         valueMax = result.valueMax
 
-        let adaptive = HeatMapConfiguration.adaptive(for: result.points)
-        radius = adaptive.radius
+//        let adaptive = HeatMapConfiguration.adaptive(for: result.points)
+//        radius = adaptive.radius
+        radius = 300_000
 
         let lats = result.points.map(\.coordinate.latitude)
         let lons = result.points.map(\.coordinate.longitude)
