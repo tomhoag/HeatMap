@@ -11,6 +11,7 @@ A Swift package for rendering geographic heat maps as filled contour polygons in
 - **Gaussian kernel density estimation** with configurable radius and grid resolution
 - **Marching squares contour extraction** with Chaikin polygon smoothing
 - **Cooperative Task cancellation** — the async `compute` method checks for cancellation between pipeline stages (after the density grid, between contour levels, and between polygon smoothing passes), so cancelled Tasks exit early instead of running to completion
+- **Multiple render modes** — filled polygons, contour lines (isolines), or both
 - **Configurable fill opacity and polygon stroke** for fine-tuned rendering control
 - **Built-in color gradients** (thermal, warm, cool, monochrome) plus custom gradient support
 - **Adaptive configuration** that auto-derives radius and resolution from your data
@@ -72,7 +73,7 @@ struct SensorReading: HeatMapable {
 
 ### 2. Add a Heat Map Layer to a Map
 
-Compute contours asynchronously and pass them to `HeatMapLayer`:
+Compute contours and pass them to `HeatMapLayer`. The async variant is recommended for large datasets to avoid blocking the UI; a synchronous overload is also available for smaller datasets or background contexts:
 
 ```swift
 import HeatMap
@@ -106,7 +107,7 @@ let config = HeatMapConfiguration(
     contourLevels: 12,     // number of contour bands
     gridResolution: 120,   // grid cells along the longer axis
     gradient: .cool,       // color gradient (.thermal, .warm, .cool, or custom)
-    smoother: .chaikin(iterations: 3)  // polygon smoothing
+    smoother: .chaikin(iterations: 2)  // polygon smoothing (default)
 )
 
 contours = try? await HeatMapContours.compute(from: points, configuration: config)
@@ -122,6 +123,7 @@ contours = try? await HeatMapContours.compute(from: points, configuration: confi
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
 | `fillOpacity` | `1.0` | Fill opacity for contour polygons (`0`–`1`). |
 | `stroke` | `.none` | Polygon stroke style (`.none` or `.styled(color:lineWidth:)`). |
+| `renderMode` | `.filled` | Contour rendering mode (`.filled`, `.isolines(lineWidth:color:)`, or `.filledWithIsolines(lineWidth:color:)`). |
 | `smoother` | `.chaikin()` | Polygon smoother to reduce stair-step artifacts. |
 
 ### 4. Adaptive Configuration
@@ -156,7 +158,24 @@ You can also provide explicit threshold values. Values outside the computed dens
 let config = HeatMapConfiguration(levelSpacing: .custom([0.1, 0.5, 1.0, 5.0, 10.0]))
 ```
 
-### 6. Recompute When Configuration Changes
+### 6. Render Modes
+
+By default contours are rendered as filled polygons. You can switch to contour lines (isolines), or combine both:
+
+```swift
+// Contour lines only, colored by gradient
+let config = HeatMapConfiguration(renderMode: .isolines(lineWidth: 2))
+
+// Uniform black isolines
+let config = HeatMapConfiguration(renderMode: .isolines(lineWidth: 1, color: .black))
+
+// Filled polygons with white isoline overlay
+let config = HeatMapConfiguration(renderMode: .filledWithIsolines(color: .white))
+```
+
+When `color` is `nil` (the default), each isoline is colored by the configured gradient at its contour level.
+
+### 7. Recompute When Configuration Changes
 
 Use `.task(id:)` to recompute contours whenever the configuration changes:
 
@@ -176,9 +195,9 @@ var body: some View {
 }
 ```
 
-### 7. Access Contour Geometry
+### 8. Access Contour Geometry
 
-The computed contours expose their underlying polygon data for hit testing, export, or custom visualizations:
+The computed contours expose their underlying polygon data for export or custom visualizations:
 
 ```swift
 let result = try await HeatMapContours.compute(from: points)
@@ -187,7 +206,13 @@ for contour in result.contours {
 }
 ```
 
-### 8. Add a Gradient Legend
+You can also hit-test a coordinate against the contours to find which levels contain it:
+
+```swift
+let hits = result.contours(containing: coordinate)
+```
+
+### 9. Add a Gradient Legend
 
 Display a legend showing the color scale alongside the map:
 
@@ -261,7 +286,7 @@ The repository includes **HeatMapExample**, an iOS app that demonstrates the lib
 2. The project already references the local `HeatMap` package.
 3. Select an iOS simulator or device and run.
 
-The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, polygon stroke, and smoothing in real time.
+The example app loads weather station coordinates from a bundled JSON file and renders them as a heat map. A control panel (tap the **Controls** button) lets you adjust the radius, contour levels, color gradient, fill opacity, polygon stroke, render mode, and smoothing in real time.
 
 ## Documentation
 
