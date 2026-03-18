@@ -60,6 +60,38 @@ enum StrokeOption: String, CaseIterable, Identifiable {
     }
 }
 
+enum RenderModeOption: String, CaseIterable, Identifiable {
+    case filled = "Filled"
+    case isolines = "Isolines"
+    case both = "Both"
+
+    var id: String { rawValue }
+
+    func renderMode(color: Color?) -> HeatMapRenderMode {
+        switch self {
+        case .filled: .filled
+        case .isolines: .isolines(color: color)
+        case .both: .filledWithIsolines(color: color)
+        }
+    }
+}
+
+enum IsolineColorOption: String, CaseIterable, Identifiable {
+    case gradient = "Gradient"
+    case black = "Black"
+    case white = "White"
+
+    var id: String { rawValue }
+
+    var color: Color? {
+        switch self {
+        case .gradient: nil
+        case .black: .black
+        case .white: .white
+        }
+    }
+}
+
 enum SpacingOption: String, CaseIterable, Identifiable {
     case linear = "Linear"
     case logarithmic = "Logarithmic"
@@ -96,6 +128,8 @@ struct ControlPanel: View {
     @Binding var selectedGradient: GradientOption
     @Binding var fillOpacity: Double
     @Binding var selectedStroke: StrokeOption
+    @Binding var selectedRenderMode: RenderModeOption
+    @Binding var selectedIsolineColor: IsolineColorOption
     @Binding var selectedSpacing: SpacingOption
     @Binding var selectedSmoother: SmootherOption
     @Binding var legendAxis: Axis
@@ -145,6 +179,22 @@ struct ControlPanel: View {
                     }
                 }
                 .pickerStyle(.segmented)
+
+                Picker("Render", selection: $selectedRenderMode) {
+                    ForEach(RenderModeOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if selectedRenderMode != .filled {
+                    Picker("Line Color", selection: $selectedIsolineColor) {
+                        ForEach(IsolineColorOption.allCases) { option in
+                            Text(option.rawValue).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
 
                 LabeledContent("Radius: \(Int(radius / 1000))km") {
                     Slider(value: $radius, in: 50_000...300_000, step: 10_000)

@@ -8,7 +8,8 @@
 import MapKit
 import SwiftUI
 
-/// A heat map layer rendered as filled contour polygons inside a SwiftUI `Map`.
+/// A heat map layer rendered as contour polygons, isolines, or both
+/// inside a SwiftUI `Map`.
 ///
 /// Pre-compute contours using
 /// ``HeatMapContours/compute(from:configuration:)-swift.type.method``
@@ -59,6 +60,9 @@ public struct HeatMapLayer: MapContent {
     /// The stroke style applied to each polygon.
     private let stroke: HeatMapStroke
 
+    /// The render mode controlling how contours are visualized.
+    private let renderMode: HeatMapRenderMode
+
     /// Creates a heat map layer from pre-computed contours.
     ///
     /// Use ``HeatMapContours/compute(from:configuration:)-swift.type.method``
@@ -71,32 +75,88 @@ public struct HeatMapLayer: MapContent {
         self.totalLevels = contours.levels
         self.fillOpacity = contours._fillOpacity
         self.stroke = contours._stroke
+        self.renderMode = contours._renderMode
     }
 
     @MainActor
     public var body: some MapContent {
-        ForEach(contours) { polygon in
-            MapPolygon(coordinates: polygon.coordinates)
-                .foregroundStyle(colorForLevel(polygon.level))
-                .stroke(strokeColor, lineWidth: strokeLineWidth)
+        if case .isolines(let lineWidth, let color) = renderMode {
+            ForEach(contours) { polygon in
+                MapPolyline(coordinates: closedCoordinates(polygon.coordinates))
+                    .stroke(isolineColor(for: polygon.level, overrideColor: color), lineWidth: lineWidth)
+            }
+        } else {
+            ForEach(contours) { polygon in
+                MapPolygon(coordinates: polygon.coordinates)
+                    .foregroundStyle(fillColor(for: polygon.level))
+                    .stroke(strokeColor, lineWidth: strokeLineWidth)
+            }
+            if case .filledWithIsolines(let lineWidth, let color) = renderMode {
+                ForEach(contours) { polygon in
+                    MapPolyline(coordinates: closedCoordinates(polygon.coordinates))
+                        .stroke(isolineColor(for: polygon.level, overrideColor: color), lineWidth: lineWidth)
+                }
+            }
         }
     }
 
-    /// Maps a contour level index to a color from the gradient, with
+    // MARK: - Color Helpers
+
+    /// Maps a contour level index to a fill color from the gradient, with
     /// the configured fill opacity applied.
     ///
     /// - Parameter level: The zero-based contour level index.
     /// - Returns: The interpolated color for the given level.
-    private func colorForLevel(_ level: Int) -> Color {
-        let color: Color
+    private func fillColor(for level: Int) -> Color {
+        gradientColor(for: level).opacity(fillOpacity)
+    }
+
+    /// Maps a contour level index to a color from the gradient.
+    ///
+    /// Used as the base color for both fill and isoline rendering.
+    ///
+    /// - Parameter level: The zero-based contour level index.
+    /// - Returns: The interpolated gradient color for the given level.
+    private func gradientColor(for level: Int) -> Color {
         if totalLevels > 1 {
             let fraction = Double(level) / Double(totalLevels - 1)
-            color = gradient.color(for: fraction)
+            return gradient.color(for: fraction)
         } else {
-            color = gradient.colors.first ?? .clear
+            return gradient.colors.first ?? .clear
         }
-        return color.opacity(fillOpacity)
     }
+
+    /// Returns the color for an isoline at the given level, with
+    /// ``fillOpacity`` applied.
+    ///
+    /// When `overrideColor` is non-nil it is used directly; otherwise the
+    /// gradient color for the level is used. In both cases the configured
+    /// fill opacity is applied so isolines fade together with filled
+    /// polygons.
+    ///
+    /// - Parameters:
+    ///   - level: The zero-based contour level index.
+    ///   - overrideColor: A uniform color for all isolines, or `nil` to
+    ///     derive the color from the gradient.
+    /// - Returns: The resolved isoline color with opacity applied.
+    private func isolineColor(for level: Int, overrideColor: Color?) -> Color {
+        (overrideColor ?? gradientColor(for: level)).opacity(fillOpacity)
+    }
+
+    // MARK: - Coordinate Helpers
+
+    /// Returns the coordinates with the first point appended to close the ring.
+    ///
+    /// `MapPolyline` renders open paths, so the first vertex is duplicated
+    /// at the end to produce a visually closed contour line.
+    private func closedCoordinates(
+        _ coordinates: [CLLocationCoordinate2D]
+    ) -> [CLLocationCoordinate2D] {
+        guard let first = coordinates.first else { return coordinates }
+        return coordinates + [first]
+    }
+
+    // MARK: - Stroke Helpers
 
     /// The resolved stroke color from the configured stroke style.
     private var strokeColor: Color {

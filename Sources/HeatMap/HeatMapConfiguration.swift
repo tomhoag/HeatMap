@@ -47,6 +47,7 @@ import Foundation
 /// - ``gradient``
 /// - ``fillOpacity``
 /// - ``stroke``
+/// - ``renderMode``
 ///
 /// ### Adaptive Configuration
 ///
@@ -100,11 +101,12 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// captured. The default is `1.5`.
     public var paddingFactor: Double
 
-    /// The fill opacity applied to all contour polygons.
+    /// The opacity applied to contour fills and isolines.
     ///
-    /// Controls how transparent the heat map polygons are when rendered on
-    /// the map. A value of `1.0` is fully opaque, `0.0` is fully transparent.
-    /// This affects only polygon fills, not strokes. The default is `1.0`.
+    /// Controls how transparent the heat map is when rendered on the map.
+    /// A value of `1.0` is fully opaque, `0.0` is fully transparent.
+    /// This affects polygon fills and isoline strokes, but not polygon
+    /// border strokes configured via ``stroke``. The default is `1.0`.
     public var fillOpacity: Double
 
     /// The stroke style applied to contour polygon borders.
@@ -114,6 +116,14 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// ``HeatMapStroke/none``, which suppresses the default border for
     /// smooth blending between contour levels.
     public var stroke: HeatMapStroke
+
+    /// The rendering mode for contour visualization.
+    ///
+    /// Controls whether contours are drawn as filled polygons, contour
+    /// lines (isolines), or both. The default is
+    /// ``HeatMapRenderMode/filled``, which preserves the standard
+    /// filled-polygon behavior.
+    public var renderMode: HeatMapRenderMode
 
     /// The polygon smoother applied to extracted contour polygons.
     ///
@@ -144,6 +154,8 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///   - fillOpacity: The fill opacity for contour polygons. Clamped to
     ///     `0...1`. Default: `1.0`.
     ///   - stroke: The polygon stroke style. Default: ``HeatMapStroke/none``.
+    ///   - renderMode: The contour rendering mode. Default:
+    ///     ``HeatMapRenderMode/filled``.
     ///   - smoother: The polygon smoother. Default:
     ///     ``PolygonSmoother/chaikin(iterations:)`` with 2 iterations.
     public init(
@@ -155,6 +167,7 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         paddingFactor: Double = 1.5,
         fillOpacity: Double = 1.0,
         stroke: HeatMapStroke = .none,
+        renderMode: HeatMapRenderMode = .filled,
         smoother: PolygonSmoother = .chaikin()
     ) {
         self.radius = max(radius, 1)
@@ -168,12 +181,13 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         self.paddingFactor = max(paddingFactor, 0)
         self.fillOpacity = min(max(fillOpacity, 0), 1)
         self.stroke = stroke
+        self.renderMode = renderMode
         self.smoother = smoother
     }
 }
 
 extension HeatMapConfiguration: CustomStringConvertible {
     public var description: String {
-        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), spacing: \(levelSpacing), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), stroke: \(stroke), smoother: \(smoother))"
+        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), spacing: \(levelSpacing), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), stroke: \(stroke), renderMode: \(renderMode), smoother: \(smoother))"
     }
 }

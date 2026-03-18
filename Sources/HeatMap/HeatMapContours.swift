@@ -119,6 +119,7 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
 /// - ``gradient``
 /// - ``fillOpacity``
 /// - ``stroke``
+/// - ``renderMode``
 ///
 /// ### Hit Testing
 ///
@@ -129,12 +130,14 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
 /// - ``HeatMapPolygon``
 public struct HeatMapContours: Sendable, Equatable {
     /// Two contour results are equal when they have the same level count,
-    /// gradient, fill opacity, stroke, and polygon identities (in order).
+    /// gradient, fill opacity, stroke, render mode, and polygon identities
+    /// (in order).
     public static func == (lhs: HeatMapContours, rhs: HeatMapContours) -> Bool {
         lhs.levels == rhs.levels
             && lhs._gradient == rhs._gradient
             && lhs._fillOpacity == rhs._fillOpacity
             && lhs._stroke == rhs._stroke
+            && lhs._renderMode == rhs._renderMode
             && lhs.polygons.count == rhs.polygons.count
             && zip(lhs.polygons, rhs.polygons).allSatisfy { $0.id == $1.id }
     }
@@ -153,6 +156,9 @@ public struct HeatMapContours: Sendable, Equatable {
 
     /// The stroke style used during computation (internal storage).
     let _stroke: HeatMapStroke
+
+    /// The render mode used during computation (internal storage).
+    let _renderMode: HeatMapRenderMode
 
     /// The contour polygons as ``HeatMapPolygon`` values.
     ///
@@ -211,6 +217,14 @@ public struct HeatMapContours: Sendable, Equatable {
     /// borders.
     public var stroke: HeatMapStroke { _stroke }
 
+    /// The render mode associated with these contours.
+    ///
+    /// This is the ``HeatMapConfiguration/renderMode`` value that was
+    /// specified in the configuration used during computation. It is used
+    /// by ``HeatMapLayer/init(contours:)`` to determine how contours
+    /// are rendered (filled polygons, isolines, or both).
+    public var renderMode: HeatMapRenderMode { _renderMode }
+
     /// Computes contours from the given points and configuration.
     ///
     /// This method builds a ``DensityGrid``, extracts contour polygons via
@@ -252,7 +266,8 @@ public struct HeatMapContours: Sendable, Equatable {
             levels: thresholds.count,
             _gradient: configuration.gradient,
             _fillOpacity: configuration.fillOpacity,
-            _stroke: configuration.stroke
+            _stroke: configuration.stroke,
+            _renderMode: configuration.renderMode
         )
     }
 
@@ -320,7 +335,8 @@ public struct HeatMapContours: Sendable, Equatable {
                 levels: thresholds.count,
                 _gradient: configuration.gradient,
                 _fillOpacity: configuration.fillOpacity,
-                _stroke: configuration.stroke
+                _stroke: configuration.stroke,
+                _renderMode: configuration.renderMode
             )
         }.value
     }
