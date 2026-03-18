@@ -65,22 +65,20 @@ struct ControlPanel: View {
                 .font(.subheadline.weight(.medium))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            LabeledContent("Dataset") {
+            menuRow("Dataset") {
                 Picker("Dataset", selection: $selectedDataset) {
                     ForEach(DatasetOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }
-                .pickerStyle(.menu)
             }
 
-            LabeledContent("Render") {
+            menuRow("Render") {
                 Picker("Render", selection: $selectedRenderMode) {
                     ForEach(RenderModeOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }
-                .pickerStyle(.menu)
             }
 
             LabeledContent("Radius: \(Int(radius / 1000))km") {
@@ -91,31 +89,28 @@ struct ControlPanel: View {
                 Slider(value: $contourLevels, in: 3...20, step: 1)
             }
 
-            LabeledContent("Smoothing") {
+            menuRow("Smoothing") {
                 Picker("Smoothing", selection: $selectedSmoother) {
                     ForEach(SmootherOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }
-                .pickerStyle(.menu)
             }
 
-            LabeledContent("Spacing") {
+            menuRow("Spacing") {
                 Picker("Spacing", selection: $selectedSpacing) {
                     ForEach(SpacingOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }
-                .pickerStyle(.menu)
             }
 
-            LabeledContent("Gradient") {
+            menuRow("Gradient") {
                 Picker("Gradient", selection: $selectedGradient) {
                     ForEach(GradientOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }
-                .pickerStyle(.menu)
             }
 
             LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
@@ -123,13 +118,12 @@ struct ControlPanel: View {
             }
 
             if selectedRenderMode != .filled {
-                LabeledContent("Line Color") {
+                menuRow("Line Color") {
                     Picker("Line Color", selection: $selectedIsolineColor) {
                         ForEach(IsolineColorOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
             }
 
@@ -140,21 +134,19 @@ struct ControlPanel: View {
                 .font(.subheadline.weight(.medium))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            LabeledContent("Orientation") {
+            menuRow("Orientation") {
                 Picker("Orientation", selection: $legendAxis) {
                     Text("Vertical").tag(Axis.vertical)
                     Text("Horizontal").tag(Axis.horizontal)
                 }
-                .pickerStyle(.menu)
             }
 
-            LabeledContent("Labels") {
+            menuRow("Labels") {
                 Picker("Labels", selection: $selectedLabelVisibility) {
                     ForEach(LabelVisibilityOption.allCases) { option in
                         Text(option.rawValue).tag(option)
                     }
                 }
-                .pickerStyle(.menu)
                 .onChange(of: selectedLabelVisibility) { _, newValue in
                     legendLabels = newValue.visibility
                 }
@@ -172,22 +164,20 @@ struct ControlPanel: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 12) {
-                LabeledContent("Dataset") {
+                menuRow("Dataset") {
                     Picker("Dataset", selection: $selectedDataset) {
                         ForEach(DatasetOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
 
-                LabeledContent("Render") {
+                menuRow("Render") {
                     Picker("Render", selection: $selectedRenderMode) {
                         ForEach(RenderModeOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
             }
 
@@ -200,33 +190,30 @@ struct ControlPanel: View {
                     Slider(value: $contourLevels, in: 3...20, step: 1)
                 }
 
-                LabeledContent("Smoothing") {
+                menuRow("Smoothing") {
                     Picker("Smoothing", selection: $selectedSmoother) {
                         ForEach(SmootherOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
             }
 
             HStack(spacing: 12) {
-                LabeledContent("Spacing") {
+                menuRow("Spacing") {
                     Picker("Spacing", selection: $selectedSpacing) {
                         ForEach(SpacingOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
 
-                LabeledContent("Gradient") {
+                menuRow("Gradient") {
                     Picker("Gradient", selection: $selectedGradient) {
                         ForEach(GradientOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
             }
 
@@ -235,13 +222,12 @@ struct ControlPanel: View {
             }
 
             if selectedRenderMode != .filled {
-                LabeledContent("Line Color") {
+                menuRow("Line Color") {
                     Picker("Line Color", selection: $selectedIsolineColor) {
                         ForEach(IsolineColorOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
             }
 
@@ -253,26 +239,34 @@ struct ControlPanel: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 12) {
-                LabeledContent("Orientation") {
+                menuRow("Orientation") {
                     Picker("Orientation", selection: $legendAxis) {
                         Text("Vertical").tag(Axis.vertical)
                         Text("Horizontal").tag(Axis.horizontal)
                     }
-                    .pickerStyle(.menu)
                 }
 
-                LabeledContent("Labels") {
+                menuRow("Labels") {
                     Picker("Labels", selection: $selectedLabelVisibility) {
                         ForEach(LabelVisibilityOption.allCases) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
                     .onChange(of: selectedLabelVisibility) { _, newValue in
                         legendLabels = newValue.visibility
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func menuRow<P: View>(_ label: String, @ViewBuilder picker: () -> P) -> some View {
+        HStack(spacing: 4) {
+            Text("\(label):")
+            picker()
+                .pickerStyle(.menu)
         }
     }
 }
