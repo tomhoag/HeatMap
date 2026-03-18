@@ -20,9 +20,8 @@ struct ContentView: View {
     @State private var contourLevels: Double = 10
     @State private var selectedGradient: GradientOption = .thermal
     @State private var fillOpacity: Double = 1.0
-    @State private var selectedStroke: StrokeOption = .none
     @State private var selectedRenderMode: RenderModeOption = .filled
-    @State private var selectedIsolineColor: IsolineColorOption = .gradient
+    @State private var selectedIsolineColor: IsolineColorOption = .none
     @State private var selectedSpacing: SpacingOption = .linear
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
@@ -50,7 +49,6 @@ struct ContentView: View {
             levelSpacing: selectedSpacing.spacing, gridResolution: 120,
             gradient: selectedGradient.gradient,
             fillOpacity: fillOpacity,
-            stroke: selectedStroke.stroke,
             renderMode: selectedRenderMode.renderMode(color: selectedIsolineColor.color),
             smoother: selectedSmoother.smoother
         )
@@ -145,7 +143,6 @@ struct ContentView: View {
                                 contourLevels: $contourLevels,
                                 selectedGradient: $selectedGradient,
                                 fillOpacity: $fillOpacity,
-                                selectedStroke: $selectedStroke,
                                 selectedRenderMode: $selectedRenderMode,
                                 selectedIsolineColor: $selectedIsolineColor,
                                 selectedSpacing: $selectedSpacing,

@@ -13,7 +13,6 @@ struct HeatMapConfigurationTests {
         #expect(config.gradient == .thermal)
         #expect(config.paddingFactor == 1.5)
         #expect(config.fillOpacity == 1.0)
-        #expect(config.stroke == .none)
         #expect(config.renderMode == .filled)
     }
 
@@ -26,7 +25,6 @@ struct HeatMapConfigurationTests {
             gradient: .warm,
             paddingFactor: 2.0,
             fillOpacity: 0.7,
-            stroke: .styled(color: .red, lineWidth: 2),
             renderMode: .isolines(lineWidth: 2)
         )
         #expect(config.radius == 300)
@@ -36,7 +34,6 @@ struct HeatMapConfigurationTests {
         #expect(config.gradient == .warm)
         #expect(config.paddingFactor == 2.0)
         #expect(config.fillOpacity == 0.7)
-        #expect(config.stroke == .styled(color: .red, lineWidth: 2))
         #expect(config.renderMode == .isolines(lineWidth: 2))
     }
 
@@ -48,7 +45,6 @@ struct HeatMapConfigurationTests {
         #expect(config.gradient == .thermal)
         #expect(config.paddingFactor == 1.5)
         #expect(config.fillOpacity == 1.0)
-        #expect(config.stroke == .none)
         #expect(config.renderMode == .filled)
     }
 
@@ -145,20 +141,6 @@ struct HeatMapConfigurationTests {
         #expect(a != b)
     }
 
-    // MARK: - Stroke
-
-    @Test func strokeHashableEquality() {
-        let a = HeatMapConfiguration(stroke: .styled(color: .blue, lineWidth: 1))
-        let b = HeatMapConfiguration(stroke: .styled(color: .blue, lineWidth: 1))
-        #expect(a == b)
-    }
-
-    @Test func strokeHashableInequality() {
-        let a = HeatMapConfiguration(stroke: .none)
-        let b = HeatMapConfiguration(stroke: .styled(color: .red, lineWidth: 1))
-        #expect(a != b)
-    }
-
     // MARK: - RenderMode
 
     @Test func renderModeHashableEquality() {
@@ -202,7 +184,6 @@ struct HeatMapConfigurationTests {
         #expect(desc.contains("gradient: HeatMapGradient.thermal"))
         #expect(desc.contains("padding: 1.5"))
         #expect(desc.contains("fillOpacity: 1.0"))
-        #expect(desc.contains("stroke: none"))
         #expect(desc.contains("renderMode: filled"))
         #expect(desc.contains("smoother: chaikin(2)"))
     }
@@ -215,7 +196,6 @@ struct HeatMapConfigurationTests {
             gridResolution: 50,
             gradient: .cool,
             fillOpacity: 0.5,
-            stroke: .styled(color: .red, lineWidth: 2),
             renderMode: .isolines(lineWidth: 2),
             smoother: .none
         )
@@ -226,7 +206,6 @@ struct HeatMapConfigurationTests {
         #expect(desc.contains("grid: 50"))
         #expect(desc.contains("gradient: HeatMapGradient.cool"))
         #expect(desc.contains("fillOpacity: 0.5"))
-        #expect(desc.contains("stroke: styled(2.0pt)"))
         #expect(desc.contains("renderMode: isolines(2.0pt)"))
         #expect(desc.contains("smoother: none"))
     }

@@ -49,12 +49,11 @@ public enum HeatMapRenderMode: Sendable, Hashable {
     ///     color each isoline by its gradient level. Default: `nil`.
     case isolines(lineWidth: CGFloat = 1, color: Color? = nil)
 
-    /// Filled polygons with isoline overlays drawn on top.
+    /// Filled polygons with isolines stroked along contour boundaries.
     ///
     /// Renders filled contour polygons (respecting
-    /// ``HeatMapConfiguration/fillOpacity`` and
-    /// ``HeatMapConfiguration/stroke``) and draws isolines on top of
-    /// each contour boundary.
+    /// ``HeatMapConfiguration/fillOpacity``) and strokes each polygon
+    /// border to produce visible contour lines.
     ///
     /// - Parameters:
     ///   - lineWidth: The stroke width for the isoline overlay

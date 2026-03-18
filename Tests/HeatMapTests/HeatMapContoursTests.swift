@@ -112,31 +112,6 @@ struct HeatMapContoursTests {
         #expect(a != b)
     }
 
-    // MARK: - Stroke
-
-    @Test func computePreservesStroke() {
-        let config = HeatMapConfiguration(stroke: .styled(color: .red, lineWidth: 2))
-        let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
-        #expect(contours.stroke == .styled(color: .red, lineWidth: 2))
-    }
-
-    @Test func defaultStrokeIsNone() {
-        let contours = HeatMapContours.compute(from: tightCluster)
-        #expect(contours.stroke == .none)
-    }
-
-    @Test func contoursNotEqualWhenDifferentStroke() {
-        let a = HeatMapContours.compute(
-            from: tightCluster,
-            configuration: HeatMapConfiguration(stroke: .none)
-        )
-        let b = HeatMapContours.compute(
-            from: tightCluster,
-            configuration: HeatMapConfiguration(stroke: .styled(color: .red, lineWidth: 1))
-        )
-        #expect(a != b)
-    }
-
     @Test func contourEqualByID() {
         let contours = HeatMapContours.compute(from: tightCluster)
         guard let first = contours.contours.first else {

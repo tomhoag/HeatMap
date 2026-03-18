@@ -13,7 +13,6 @@ struct ControlPanel: View {
     @Binding var contourLevels: Double
     @Binding var selectedGradient: GradientOption
     @Binding var fillOpacity: Double
-    @Binding var selectedStroke: StrokeOption
     @Binding var selectedRenderMode: RenderModeOption
     @Binding var selectedIsolineColor: IsolineColorOption
     @Binding var selectedSpacing: SpacingOption
@@ -95,20 +94,8 @@ struct ControlPanel: View {
                     }
                 }
 
-                // Row 3: Stroke, Opacity
-                HStack(spacing: 12) {
-                    LabeledContent("Stroke:") {
-                        Picker("Stroke", selection: $selectedStroke) {
-                            ForEach(StrokeOption.allCases) { option in
-                                Text(option.rawValue).tag(option)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-
-                    LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
-                        Slider(value: $fillOpacity, in: 0...1, step: 0.05)
-                    }
+                LabeledContent("Opacity: \(Int(fillOpacity * 100))%") {
+                    Slider(value: $fillOpacity, in: 0...1, step: 0.05)
                 }
 
                 if selectedRenderMode != .filled {
@@ -162,9 +149,8 @@ struct ControlPanel: View {
     @Previewable @State var contourLevels: Double = 10
     @Previewable @State var selectedGradient: GradientOption = .thermal
     @Previewable @State var fillOpacity: Double = 1.0
-    @Previewable @State var selectedStroke: StrokeOption = .none
     @Previewable @State var selectedRenderMode: RenderModeOption = .filled
-    @Previewable @State var selectedIsolineColor: IsolineColorOption = .gradient
+    @Previewable @State var selectedIsolineColor: IsolineColorOption = .none
     @Previewable @State var selectedSpacing: SpacingOption = .linear
     @Previewable @State var selectedSmoother: SmootherOption = .chaikin2
     @Previewable @State var legendAxis: Axis = .vertical
@@ -176,7 +162,6 @@ struct ControlPanel: View {
         contourLevels: $contourLevels,
         selectedGradient: $selectedGradient,
         fillOpacity: $fillOpacity,
-        selectedStroke: $selectedStroke,
         selectedRenderMode: $selectedRenderMode,
         selectedIsolineColor: $selectedIsolineColor,
         selectedSpacing: $selectedSpacing,

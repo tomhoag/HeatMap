@@ -42,24 +42,6 @@ enum SmootherOption: String, CaseIterable, Identifiable {
     }
 }
 
-enum StrokeOption: String, CaseIterable, Identifiable {
-    case none = "None"
-    case thin = "Thin"
-    case medium = "Medium"
-    case thick = "Thick"
-
-    var id: String { rawValue }
-
-    var stroke: HeatMapStroke {
-        switch self {
-        case .none: .none
-        case .thin: .styled(color: .black, lineWidth: 0.5)
-        case .medium: .styled(color: .black, lineWidth: 1)
-        case .thick: .styled(color: .black, lineWidth: 2)
-        }
-    }
-}
-
 enum RenderModeOption: String, CaseIterable, Identifiable {
     case filled = "Filled"
     case isolines = "Isolines"
@@ -77,7 +59,7 @@ enum RenderModeOption: String, CaseIterable, Identifiable {
 }
 
 enum IsolineColorOption: String, CaseIterable, Identifiable {
-    case gradient = "Gradient"
+    case none = "None"
     case black = "Black"
     case white = "White"
 
@@ -85,7 +67,7 @@ enum IsolineColorOption: String, CaseIterable, Identifiable {
 
     var color: Color? {
         switch self {
-        case .gradient: nil
+        case .none: nil
         case .black: .black
         case .white: .white
         }

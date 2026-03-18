@@ -54,7 +54,6 @@ import SwiftUI
 /// - ``levelCount``
 /// - ``gradient``
 /// - ``fillOpacity``
-/// - ``stroke``
 /// - ``renderMode``
 ///
 /// ### Hit Testing
@@ -66,13 +65,12 @@ import SwiftUI
 /// - ``HeatMapPolygon``
 public struct HeatMapContours: Sendable, Equatable {
     /// Two contour results are equal when they have the same level count,
-    /// gradient, fill opacity, stroke, render mode, and polygon identities
+    /// gradient, fill opacity, render mode, and polygon identities
     /// (in order).
     public static func == (lhs: HeatMapContours, rhs: HeatMapContours) -> Bool {
         lhs.levels == rhs.levels
             && lhs.configuration.gradient == rhs.configuration.gradient
             && lhs.configuration.fillOpacity == rhs.configuration.fillOpacity
-            && lhs.configuration.stroke == rhs.configuration.stroke
             && lhs.configuration.renderMode == rhs.configuration.renderMode
             && lhs.polygons.count == rhs.polygons.count
             && zip(lhs.polygons, rhs.polygons).allSatisfy { $0.id == $1.id }
@@ -126,14 +124,6 @@ public struct HeatMapContours: Sendable, Equatable {
     /// by ``HeatMapLayer/init(contours:)`` to set the opacity of rendered
     /// polygons.
     public var fillOpacity: Double { configuration.fillOpacity }
-
-    /// The stroke style associated with these contours.
-    ///
-    /// This is the ``HeatMapConfiguration/stroke`` value that was
-    /// specified in the configuration used during computation. It is used
-    /// by ``HeatMapLayer/init(contours:)`` to style the rendered polygon
-    /// borders.
-    public var stroke: HeatMapStroke { configuration.stroke }
 
     /// The render mode associated with these contours.
     ///

@@ -46,7 +46,6 @@ import Foundation
 ///
 /// - ``gradient``
 /// - ``fillOpacity``
-/// - ``stroke``
 /// - ``renderMode``
 ///
 /// ### Adaptive Configuration
@@ -105,17 +104,8 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///
     /// Controls how transparent the heat map is when rendered on the map.
     /// A value of `1.0` is fully opaque, `0.0` is fully transparent.
-    /// This affects polygon fills and isoline strokes, but not polygon
-    /// border strokes configured via ``stroke``. The default is `1.0`.
+    /// The default is `1.0`.
     public var fillOpacity: Double
-
-    /// The stroke style applied to contour polygon borders.
-    ///
-    /// Controls whether MapKit's default polygon border is visible and,
-    /// if so, what color and width it uses. The default is
-    /// ``HeatMapStroke/none``, which suppresses the default border for
-    /// smooth blending between contour levels.
-    public var stroke: HeatMapStroke
 
     /// The rendering mode for contour visualization.
     ///
@@ -153,7 +143,6 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///     Minimum: `0`. Default: `1.5`.
     ///   - fillOpacity: The fill opacity for contour polygons. Clamped to
     ///     `0...1`. Default: `1.0`.
-    ///   - stroke: The polygon stroke style. Default: ``HeatMapStroke/none``.
     ///   - renderMode: The contour rendering mode. Default:
     ///     ``HeatMapRenderMode/filled``.
     ///   - smoother: The polygon smoother. Default:
@@ -166,7 +155,6 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         gradient: HeatMapGradient = .thermal,
         paddingFactor: Double = 1.5,
         fillOpacity: Double = 1.0,
-        stroke: HeatMapStroke = .none,
         renderMode: HeatMapRenderMode = .filled,
         smoother: PolygonSmoother = .chaikin()
     ) {
@@ -180,7 +168,6 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         self.gradient = gradient
         self.paddingFactor = max(paddingFactor, 0)
         self.fillOpacity = min(max(fillOpacity, 0), 1)
-        self.stroke = stroke
         self.renderMode = renderMode
         self.smoother = smoother
     }
@@ -188,6 +175,6 @@ public struct HeatMapConfiguration: Sendable, Hashable {
 
 extension HeatMapConfiguration: CustomStringConvertible {
     public var description: String {
-        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), spacing: \(levelSpacing), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), stroke: \(stroke), renderMode: \(renderMode), smoother: \(smoother))"
+        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), spacing: \(levelSpacing), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), renderMode: \(renderMode), smoother: \(smoother))"
     }
 }
