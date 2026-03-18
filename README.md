@@ -26,7 +26,7 @@ HeatMap is a native SwiftUI `MapContent` component — no image overlays, no UIK
 - **Works out of the box** — `HeatMapConfiguration.adaptive(for:)` inspects your data and picks a sensible radius and resolution automatically. Get a meaningful map before you've tuned anything.
 - **Async and cancellation-aware** — compute contours off the main thread with `async`/`await`. Switching configurations or navigating away cancels stale work automatically.
 - **Multiple render modes** — filled polygons, contour isolines, or both together. Four built-in color gradients plus a `HeatMapGradient(colors:)` API for your own.
-- **Fully configurable** — kernel radius, contour levels, grid resolution, level spacing (linear, logarithmic, or custom thresholds), fill opacity, and polygon smoothing are all adjustable.
+- **Fully configurable** — kernel radius, contour levels, grid resolution, level spacing (linear, logarithmic, quantile, or custom thresholds), fill opacity, and polygon smoothing are all adjustable.
 - **Built-in legend** — `HeatMapLegend` renders the color scale with configurable orientation, label visibility, and custom endpoint text. Localization-ready out of the box.
 - **Hit testing** — query which contour levels contain a given coordinate, for tap-to-inspect interactions.
 - **Scales from city blocks to continents** — the same configuration API works whether your data spans a neighborhood or a country.
@@ -130,7 +130,7 @@ contours = try? await HeatMapContours.compute(from: points, configuration: confi
 |-----------|---------|-------------|
 | `radius` | `500` | Gaussian kernel radius in meters. Larger values produce smoother, more diffuse maps. |
 | `contourLevels` | `10` | Number of contour bands. More levels produce a finer gradient. |
-| `levelSpacing` | `.linear` | Threshold spacing strategy (`.linear`, `.logarithmic`, or `.custom([Double])`). |
+| `levelSpacing` | `.linear` | Threshold spacing strategy (`.linear`, `.logarithmic`, `.quantile`, or `.custom([Double])`). |
 | `gridResolution` | `100` | Grid cells along the longer axis. Higher values increase detail and computation time. |
 | `gradient` | `.thermal` | Color gradient for mapping density to color. |
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
@@ -158,17 +158,49 @@ config.gradient = .cool
 
 ### 5. Contour Level Spacing
 
-By default thresholds are evenly spaced across the density range. For data with long-tail distributions (population density, precipitation, seismic activity), logarithmic spacing concentrates more contour levels in the lower-density region:
+The `levelSpacing` parameter controls how density thresholds are distributed between the grid's minimum and maximum values. Choosing the right strategy depends on your data distribution:
+
+#### Linear (default)
+
+Thresholds are evenly spaced across the density range. Best for data where points are distributed relatively uniformly and you want each contour band to represent the same density difference:
+
+```swift
+let config = HeatMapConfiguration(levelSpacing: .linear)
+```
+
+**Use when:** point density is fairly uniform, or you want a perceptually linear mapping between color and density (e.g. a tight sensor grid, evenly distributed samples).
+
+#### Logarithmic
+
+Concentrates more contour levels in the lower-density region while still covering the full range. Best for data with long-tail distributions where most of the variation occurs at lower values:
 
 ```swift
 let config = HeatMapConfiguration(levelSpacing: .logarithmic)
 ```
 
-You can also provide explicit threshold values. Values outside the computed density range are automatically filtered out:
+**Use when:** your data has a wide dynamic range but most detail is in the lower densities (e.g. population density near a city center, precipitation data, seismic activity).
+
+#### Quantile
+
+Places thresholds at equal-area percentiles of the actual density distribution rather than dividing the range arithmetically. This guarantees contours appear even in sparse regions where density values are far below the global maximum:
+
+```swift
+let config = HeatMapConfiguration(levelSpacing: .quantile)
+```
+
+**Use when:** your data has highly uneven spatial density — dense clusters in some areas and sparse coverage in others (e.g. weather station networks where coastal cities have many stations but rural interiors have few, cell tower maps with urban/rural contrast, species observation data with sampling bias).
+
+**Trade-off:** because thresholds adapt to the data distribution, the density difference between adjacent contour bands is not constant. A band in a dense area may span a much larger density range than a band in a sparse area. The map will look more "filled in" but the visual uniformity can overstate the similarity between regions of very different density.
+
+#### Custom
+
+Provide explicit threshold values for full control. Values outside the computed density range are automatically filtered out:
 
 ```swift
 let config = HeatMapConfiguration(levelSpacing: .custom([0.1, 0.5, 1.0, 5.0, 10.0]))
 ```
+
+**Use when:** you know the density values that matter for your domain and want exact control over where contour boundaries fall.
 
 ### 6. Render Modes
 
