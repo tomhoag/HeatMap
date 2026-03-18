@@ -14,6 +14,7 @@ struct HeatMapConfigurationTests {
         #expect(config.paddingFactor == 1.5)
         #expect(config.fillOpacity == 1.0)
         #expect(config.stroke == .none)
+        #expect(config.renderMode == .filled)
     }
 
     @Test func customInitialization() {
@@ -25,7 +26,8 @@ struct HeatMapConfigurationTests {
             gradient: .warm,
             paddingFactor: 2.0,
             fillOpacity: 0.7,
-            stroke: .styled(color: .red, lineWidth: 2)
+            stroke: .styled(color: .red, lineWidth: 2),
+            renderMode: .isolines(lineWidth: 2)
         )
         #expect(config.radius == 300)
         #expect(config.contourLevels == 5)
@@ -35,6 +37,7 @@ struct HeatMapConfigurationTests {
         #expect(config.paddingFactor == 2.0)
         #expect(config.fillOpacity == 0.7)
         #expect(config.stroke == .styled(color: .red, lineWidth: 2))
+        #expect(config.renderMode == .isolines(lineWidth: 2))
     }
 
     @Test func partialCustomInitialization() {
@@ -46,6 +49,7 @@ struct HeatMapConfigurationTests {
         #expect(config.paddingFactor == 1.5)
         #expect(config.fillOpacity == 1.0)
         #expect(config.stroke == .none)
+        #expect(config.renderMode == .filled)
     }
 
     @Test func hashableEquality() {
@@ -155,6 +159,37 @@ struct HeatMapConfigurationTests {
         #expect(a != b)
     }
 
+    // MARK: - RenderMode
+
+    @Test func renderModeHashableEquality() {
+        let a = HeatMapConfiguration(renderMode: .isolines(lineWidth: 1))
+        let b = HeatMapConfiguration(renderMode: .isolines(lineWidth: 1))
+        #expect(a == b)
+    }
+
+    @Test func renderModeHashableInequality() {
+        let a = HeatMapConfiguration(renderMode: .filled)
+        let b = HeatMapConfiguration(renderMode: .isolines())
+        #expect(a != b)
+    }
+
+    @Test func renderModeIsolinesDifferentLineWidth() {
+        let a = HeatMapConfiguration(renderMode: .isolines(lineWidth: 1))
+        let b = HeatMapConfiguration(renderMode: .isolines(lineWidth: 3))
+        #expect(a != b)
+    }
+
+    @Test func renderModeIsolinesWithColor() {
+        let config = HeatMapConfiguration(renderMode: .isolines(color: .black))
+        #expect(config.renderMode == .isolines(color: .black))
+    }
+
+    @Test func renderModeIsolinesColorInequality() {
+        let a = HeatMapConfiguration(renderMode: .isolines(color: .black))
+        let b = HeatMapConfiguration(renderMode: .isolines())
+        #expect(a != b)
+    }
+
     // MARK: - CustomStringConvertible
 
     @Test func descriptionContainsAllFields() {
@@ -168,6 +203,7 @@ struct HeatMapConfigurationTests {
         #expect(desc.contains("padding: 1.5"))
         #expect(desc.contains("fillOpacity: 1.0"))
         #expect(desc.contains("stroke: none"))
+        #expect(desc.contains("renderMode: filled"))
         #expect(desc.contains("smoother: chaikin(2)"))
     }
 
@@ -180,6 +216,7 @@ struct HeatMapConfigurationTests {
             gradient: .cool,
             fillOpacity: 0.5,
             stroke: .styled(color: .red, lineWidth: 2),
+            renderMode: .isolines(lineWidth: 2),
             smoother: .none
         )
         let desc = String(describing: config)
@@ -190,6 +227,7 @@ struct HeatMapConfigurationTests {
         #expect(desc.contains("gradient: HeatMapGradient.cool"))
         #expect(desc.contains("fillOpacity: 0.5"))
         #expect(desc.contains("stroke: styled(2.0pt)"))
+        #expect(desc.contains("renderMode: isolines(2.0pt)"))
         #expect(desc.contains("smoother: none"))
     }
 }

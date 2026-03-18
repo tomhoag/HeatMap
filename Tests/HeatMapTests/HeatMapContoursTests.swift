@@ -167,6 +167,31 @@ struct HeatMapContoursTests {
         #expect(first != different)
     }
 
+    // MARK: - RenderMode
+
+    @Test func computePreservesRenderMode() {
+        let config = HeatMapConfiguration(renderMode: .isolines(lineWidth: 2))
+        let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
+        #expect(contours.renderMode == .isolines(lineWidth: 2))
+    }
+
+    @Test func defaultRenderModeIsFilled() {
+        let contours = HeatMapContours.compute(from: tightCluster)
+        #expect(contours.renderMode == .filled)
+    }
+
+    @Test func contoursNotEqualWhenDifferentRenderMode() {
+        let a = HeatMapContours.compute(
+            from: tightCluster,
+            configuration: HeatMapConfiguration(renderMode: .filled)
+        )
+        let b = HeatMapContours.compute(
+            from: tightCluster,
+            configuration: HeatMapConfiguration(renderMode: .isolines())
+        )
+        #expect(a != b)
+    }
+
     // MARK: - LevelSpacing
 
     @Test func computeWithLogarithmicSpacing() {
