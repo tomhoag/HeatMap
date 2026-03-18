@@ -10,14 +10,6 @@ import Foundation
 
 extension HeatMapConfiguration {
 
-    /// Approximate meters per degree of latitude.
-    private static let metersPerDegreeLat: Double = 111_320
-
-    /// Returns the approximate meters per degree of longitude at the given latitude.
-    private static func metersPerDegreeLon(at latitude: Double) -> Double {
-        metersPerDegreeLat * cos(latitude * .pi / 180)
-    }
-
     /// Creates a configuration with parameters derived from the given points.
     ///
     /// The method examines the geographic spread and density of the input
@@ -70,8 +62,8 @@ extension HeatMapConfiguration {
 
         // 2. Convert to meters
         let centerLat = (minLat + maxLat) / 2
-        let heightMeters = (maxLat - minLat) * metersPerDegreeLat
-        let widthMeters = (maxLon - minLon) * metersPerDegreeLon(at: centerLat)
+        let heightMeters = (maxLat - minLat) * GeoConversions.metersPerDegreeLat
+        let widthMeters = (maxLon - minLon) * GeoConversions.metersPerDegreeLon(at: centerLat)
         let area = heightMeters * widthMeters
 
         // 3. Estimate radius from mean inter-point spacing

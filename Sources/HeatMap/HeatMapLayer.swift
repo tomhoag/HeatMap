@@ -46,7 +46,7 @@ import SwiftUI
 /// - ``HeatMapContours``
 public struct HeatMapLayer: MapContent {
     /// The contour polygons to render.
-    private let contours: [ContourPolygon]
+    private let contours: [HeatMapPolygon]
 
     /// The gradient used to color each contour level.
     private let gradient: HeatMapGradient
@@ -71,11 +71,11 @@ public struct HeatMapLayer: MapContent {
     /// - Parameter contours: Pre-computed contour data.
     public init(contours: HeatMapContours) {
         self.contours = contours.polygons
-        self.gradient = contours._gradient
+        self.gradient = contours.gradient
         self.totalLevels = contours.levels
-        self.fillOpacity = contours._fillOpacity
-        self.stroke = contours._stroke
-        self.renderMode = contours._renderMode
+        self.fillOpacity = contours.fillOpacity
+        self.stroke = contours.stroke
+        self.renderMode = contours.renderMode
     }
 
     @MainActor

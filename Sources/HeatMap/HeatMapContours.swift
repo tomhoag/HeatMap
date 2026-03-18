@@ -8,70 +8,6 @@
 import CoreLocation
 import SwiftUI
 
-/// A single contour polygon representing an iso-density region.
-///
-/// Each contour has a ``level`` index (0 = lowest density), a density
-/// ``threshold``, and an array of geographic ``coordinates`` forming
-/// a closed polygon.
-///
-/// You don't create `HeatMapPolygon` values directly. Instead, access
-/// them through ``HeatMapContours/contours`` after computing contours:
-///
-/// ```swift
-/// let result = try await HeatMapContours.compute(from: points)
-/// for contour in result.contours {
-///     print("Level \(contour.level): \(contour.coordinates.count) vertices")
-/// }
-/// ```
-///
-/// The contour geometry is useful for advanced use cases such as hit
-/// testing, exporting polygon data, or building custom visualizations
-/// outside of ``HeatMapLayer``.
-///
-/// ## Topics
-///
-/// ### Identifying the Contour
-///
-/// - ``id``
-/// - ``level``
-/// - ``threshold``
-///
-/// ### Accessing Geometry
-///
-/// - ``coordinates``
-///
-/// ### Geometry Queries
-///
-/// - ``contains(_:)``
-public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
-    /// Two contours are equal when they share the same ``id``.
-    public static func == (lhs: HeatMapPolygon, rhs: HeatMapPolygon) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    /// A unique identifier for this contour polygon.
-    public let id: UUID
-
-    /// The contour level index, starting at 0 for the lowest density.
-    ///
-    /// Multiple contour polygons may share the same level when the density
-    /// field has disconnected regions at a given threshold.
-    public let level: Int
-
-    /// The density threshold for this contour.
-    ///
-    /// Points inside this polygon have a density value at or above this
-    /// threshold.
-    public let threshold: Double
-
-    /// The closed polygon vertices as geographic coordinates.
-    ///
-    /// The polygon is implicitly closed — the last vertex connects back
-    /// to the first without a duplicate closing point. The coordinates
-    /// have already been smoothed by the configured ``PolygonSmoother``.
-    public let coordinates: [CLLocationCoordinate2D]
-}
-
 /// Pre-computed contour data for use with ``HeatMapLayer``.
 ///
 /// For large datasets, computing contours on the main actor can block the
@@ -134,31 +70,22 @@ public struct HeatMapContours: Sendable, Equatable {
     /// (in order).
     public static func == (lhs: HeatMapContours, rhs: HeatMapContours) -> Bool {
         lhs.levels == rhs.levels
-            && lhs._gradient == rhs._gradient
-            && lhs._fillOpacity == rhs._fillOpacity
-            && lhs._stroke == rhs._stroke
-            && lhs._renderMode == rhs._renderMode
+            && lhs.configuration.gradient == rhs.configuration.gradient
+            && lhs.configuration.fillOpacity == rhs.configuration.fillOpacity
+            && lhs.configuration.stroke == rhs.configuration.stroke
+            && lhs.configuration.renderMode == rhs.configuration.renderMode
             && lhs.polygons.count == rhs.polygons.count
             && zip(lhs.polygons, rhs.polygons).allSatisfy { $0.id == $1.id }
     }
 
-    /// The extracted contour polygons (internal representation).
-    let polygons: [ContourPolygon]
+    /// The extracted contour polygons.
+    let polygons: [HeatMapPolygon]
 
     /// The number of contour levels used during extraction.
     let levels: Int
 
-    /// The gradient used during computation (internal storage).
-    let _gradient: HeatMapGradient
-
-    /// The fill opacity used during computation (internal storage).
-    let _fillOpacity: Double
-
-    /// The stroke style used during computation (internal storage).
-    let _stroke: HeatMapStroke
-
-    /// The render mode used during computation (internal storage).
-    let _renderMode: HeatMapRenderMode
+    /// The configuration used during computation.
+    let configuration: HeatMapConfiguration
 
     /// The contour polygons as ``HeatMapPolygon`` values.
     ///
@@ -169,16 +96,7 @@ public struct HeatMapContours: Sendable, Equatable {
     /// Use this property to access the underlying contour geometry for
     /// hit testing, exporting polygon data, or building custom
     /// visualizations outside of ``HeatMapLayer``.
-    public var contours: [HeatMapPolygon] {
-        polygons.map { polygon in
-            HeatMapPolygon(
-                id: polygon.id,
-                level: polygon.level,
-                threshold: polygon.threshold,
-                coordinates: polygon.coordinates
-            )
-        }
-    }
+    public var contours: [HeatMapPolygon] { polygons }
 
     /// The total number of contour polygons across all levels.
     ///
@@ -199,7 +117,7 @@ public struct HeatMapContours: Sendable, Equatable {
     /// ``HeatMapConfiguration`` used during computation. It is also
     /// used by ``HeatMapLayer/init(contours:)`` to color the rendered
     /// polygons.
-    public var gradient: HeatMapGradient { _gradient }
+    public var gradient: HeatMapGradient { configuration.gradient }
 
     /// The fill opacity associated with these contours.
     ///
@@ -207,7 +125,7 @@ public struct HeatMapContours: Sendable, Equatable {
     /// specified in the configuration used during computation. It is used
     /// by ``HeatMapLayer/init(contours:)`` to set the opacity of rendered
     /// polygons.
-    public var fillOpacity: Double { _fillOpacity }
+    public var fillOpacity: Double { configuration.fillOpacity }
 
     /// The stroke style associated with these contours.
     ///
@@ -215,7 +133,7 @@ public struct HeatMapContours: Sendable, Equatable {
     /// specified in the configuration used during computation. It is used
     /// by ``HeatMapLayer/init(contours:)`` to style the rendered polygon
     /// borders.
-    public var stroke: HeatMapStroke { _stroke }
+    public var stroke: HeatMapStroke { configuration.stroke }
 
     /// The render mode associated with these contours.
     ///
@@ -223,7 +141,7 @@ public struct HeatMapContours: Sendable, Equatable {
     /// specified in the configuration used during computation. It is used
     /// by ``HeatMapLayer/init(contours:)`` to determine how contours
     /// are rendered (filled polygons, isolines, or both).
-    public var renderMode: HeatMapRenderMode { _renderMode }
+    public var renderMode: HeatMapRenderMode { configuration.renderMode }
 
     /// Computes contours from the given points and configuration.
     ///
@@ -254,8 +172,8 @@ public struct HeatMapContours: Sendable, Equatable {
             from: grid,
             thresholds: thresholds
         )
-        let smoothed = result.polygons.map { polygon in
-            ContourPolygon(
+        let smoothed = result.map { polygon in
+            HeatMapPolygon(
                 level: polygon.level,
                 threshold: polygon.threshold,
                 coordinates: configuration.smoother.smooth(polygon.coordinates)
@@ -264,10 +182,7 @@ public struct HeatMapContours: Sendable, Equatable {
         return HeatMapContours(
             polygons: smoothed,
             levels: thresholds.count,
-            _gradient: configuration.gradient,
-            _fillOpacity: configuration.fillOpacity,
-            _stroke: configuration.stroke,
-            _renderMode: configuration.renderMode
+            configuration: configuration
         )
     }
 
@@ -321,9 +236,9 @@ public struct HeatMapContours: Sendable, Equatable {
             try Task.checkCancellation()
 
             // 4. Smoothing (check between each polygon)
-            let smoothed = try result.polygons.map { polygon in
+            let smoothed = try result.map { polygon in
                 try Task.checkCancellation()
-                return ContourPolygon(
+                return HeatMapPolygon(
                     level: polygon.level,
                     threshold: polygon.threshold,
                     coordinates: configuration.smoother.smooth(polygon.coordinates)
@@ -333,10 +248,7 @@ public struct HeatMapContours: Sendable, Equatable {
             return HeatMapContours(
                 polygons: smoothed,
                 levels: thresholds.count,
-                _gradient: configuration.gradient,
-                _fillOpacity: configuration.fillOpacity,
-                _stroke: configuration.stroke,
-                _renderMode: configuration.renderMode
+                configuration: configuration
             )
         }.value
     }

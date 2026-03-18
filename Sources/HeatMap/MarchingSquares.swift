@@ -9,47 +9,6 @@
 import CoreLocation
 import Foundation
 
-/// A single contour polygon at a specific density level.
-///
-/// Each polygon represents a closed region where the density exceeds
-/// the associated ``threshold``. Polygons at higher ``level`` values
-/// correspond to higher density regions and are rendered on top.
-struct ContourPolygon: Sendable, Identifiable {
-    /// A unique identifier for this polygon.
-    let id: UUID
-
-    /// The contour level index (0 = lowest density).
-    let level: Int
-
-    /// The density threshold for this contour.
-    let threshold: Double
-
-    /// The closed polygon vertices as geographic coordinates.
-    ///
-    /// The polygon is implicitly closed — the last vertex connects back
-    /// to the first without a duplicate closing point.
-    let coordinates: [CLLocationCoordinate2D]
-
-    /// Creates a contour polygon.
-    ///
-    /// - Parameters:
-    ///   - level: The zero-based contour level index.
-    ///   - threshold: The density threshold value.
-    ///   - coordinates: The polygon vertices in geographic coordinates.
-    init(level: Int, threshold: Double, coordinates: [CLLocationCoordinate2D]) {
-        self.id = UUID()
-        self.level = level
-        self.threshold = threshold
-        self.coordinates = coordinates
-    }
-}
-
-/// The result of contour extraction containing all polygons across all levels.
-struct ContourResult: Sendable {
-    /// All extracted contour polygons, ordered from lowest level to highest.
-    let polygons: [ContourPolygon]
-}
-
 /// Extracts contour polygons from a ``DensityGrid`` using the marching
 /// squares algorithm.
 ///
@@ -87,22 +46,22 @@ enum MarchingSquares {
     /// - Parameters:
     ///   - grid: The density grid to extract contours from.
     ///   - thresholds: The density threshold values, sorted ascending.
-    /// - Returns: A ``ContourResult`` containing all extracted polygons,
-    ///   sorted from lowest level (outermost) to highest (innermost).
+    /// - Returns: All extracted polygons, sorted from lowest level
+    ///   (outermost) to highest (innermost).
     static func extractContours(
         from grid: DensityGrid,
         thresholds: [Double]
-    ) throws -> ContourResult {
+    ) throws -> [HeatMapPolygon] {
         guard grid.rows > 1, grid.columns > 1, !thresholds.isEmpty else {
-            return ContourResult(polygons: [])
+            return []
         }
 
         let range = grid.maxDensity - grid.minDensity
         guard range > 0 else {
-            return ContourResult(polygons: [])
+            return []
         }
 
-        var allPolygons: [ContourPolygon] = []
+        var allPolygons: [HeatMapPolygon] = []
 
         for (level, threshold) in thresholds.enumerated() {
             try Task.checkCancellation()
@@ -114,7 +73,7 @@ enum MarchingSquares {
                 let coordinates = ring.map { grid.coordinate(row: $0.row, col: $0.col) }
                 guard coordinates.count >= 3 else { continue }
                 allPolygons.append(
-                    ContourPolygon(
+                    HeatMapPolygon(
                         level: level,
                         threshold: threshold,
                         coordinates: coordinates
@@ -123,7 +82,7 @@ enum MarchingSquares {
             }
         }
 
-        return ContourResult(polygons: allPolygons)
+        return allPolygons
     }
 
     // MARK: - Marching Squares Core

@@ -64,20 +64,6 @@ struct DensityGrid: Sendable {
     /// The largest density value found in the grid.
     let maxDensity: Double
 
-    /// Approximate meters per degree of latitude.
-    private static let metersPerDegreeLat: Double = 111_320
-
-    /// Returns the approximate meters per degree of longitude at the given latitude.
-    ///
-    /// Longitude degrees shrink toward the poles due to the convergence of
-    /// meridians. This method applies a cosine correction.
-    ///
-    /// - Parameter latitude: The latitude in degrees at which to compute the scale.
-    /// - Returns: The approximate distance in meters of one degree of longitude.
-    private static func metersPerDegreeLon(at latitude: Double) -> Double {
-        metersPerDegreeLat * cos(latitude * .pi / 180)
-    }
-
     /// Computes a density grid from the given heat map points.
     ///
     /// The algorithm:
@@ -127,8 +113,8 @@ struct DensityGrid: Sendable {
         // 2. Expand bounding box by radius * paddingFactor
         let padding = configuration.radius * configuration.paddingFactor
         let centerLat = (minLat + maxLat) / 2
-        let deltaLat = padding / metersPerDegreeLat
-        let deltaLon = padding / metersPerDegreeLon(at: centerLat)
+        let deltaLat = padding / GeoConversions.metersPerDegreeLat
+        let deltaLon = padding / GeoConversions.metersPerDegreeLon(at: centerLat)
 
         minLat -= deltaLat
         maxLat += deltaLat
@@ -136,8 +122,8 @@ struct DensityGrid: Sendable {
         maxLon += deltaLon
 
         // 3. Determine grid dimensions based on aspect ratio in meters
-        let heightMeters = (maxLat - minLat) * metersPerDegreeLat
-        let widthMeters = (maxLon - minLon) * metersPerDegreeLon(at: centerLat)
+        let heightMeters = (maxLat - minLat) * GeoConversions.metersPerDegreeLat
+        let widthMeters = (maxLon - minLon) * GeoConversions.metersPerDegreeLon(at: centerLat)
 
         let resolution = max(configuration.gridResolution, 2)
         let rows: Int
@@ -158,8 +144,8 @@ struct DensityGrid: Sendable {
         let sigma = configuration.radius / 3.0
         let twoSigmaSquared = 2.0 * sigma * sigma
         // Only visit cells within 3 * sigma of each point
-        let kernelRadiusLat = (3.0 * sigma) / metersPerDegreeLat
-        let kernelRadiusLon = (3.0 * sigma) / metersPerDegreeLon(at: centerLat)
+        let kernelRadiusLat = (3.0 * sigma) / GeoConversions.metersPerDegreeLat
+        let kernelRadiusLon = (3.0 * sigma) / GeoConversions.metersPerDegreeLon(at: centerLat)
 
         var grid = [Double](repeating: 0, count: rows * columns)
 
@@ -176,8 +162,8 @@ struct DensityGrid: Sendable {
 
             for row in rowStart...rowEnd {
                 let cellLat = minLat + (Double(row) + 0.5) * latStep
-                let dy = (cellLat - pointLat) * metersPerDegreeLat
-                let lonScale = metersPerDegreeLon(at: cellLat)
+                let dy = (cellLat - pointLat) * GeoConversions.metersPerDegreeLat
+                let lonScale = GeoConversions.metersPerDegreeLon(at: cellLat)
 
                 for col in colStart...colEnd {
                     let cellLon = minLon + (Double(col) + 0.5) * lonStep
