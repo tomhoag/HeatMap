@@ -16,6 +16,7 @@ struct ControlPanel: View {
     @Binding var fillOpacity: Double
     @Binding var selectedRenderMode: RenderModeOption
     @Binding var selectedIsolineColor: IsolineColorOption
+    @Binding var isolineWidth: Double
     @Binding var selectedSpacing: SpacingOption
     @Binding var selectedSmoother: SmootherOption
     @Binding var legendAxis: Axis
@@ -87,6 +88,12 @@ struct ControlPanel: View {
                         Text(option.rawValue).tag(option)
                     }
                 }
+            }
+            .opacity(selectedRenderMode == .filled ? 0 : 1)
+            .disabled(selectedRenderMode == .filled)
+
+            LabeledContent("Line Width: \(isolineWidth, specifier: "%.1f")pt") {
+                Slider(value: $isolineWidth, in: 0.5...4, step: 0.5)
             }
             .opacity(selectedRenderMode == .filled ? 0 : 1)
             .disabled(selectedRenderMode == .filled)
@@ -190,6 +197,12 @@ struct ControlPanel: View {
                 .opacity(selectedRenderMode == .filled ? 0 : 1)
                 .disabled(selectedRenderMode == .filled)
 
+                LabeledContent("Line Width: \(isolineWidth, specifier: "%.1f")pt") {
+                    Slider(value: $isolineWidth, in: 0.5...4, step: 0.5)
+                }
+                .opacity(selectedRenderMode == .filled ? 0 : 1)
+                .disabled(selectedRenderMode == .filled)
+
                 Spacer()
             }
 
@@ -285,6 +298,7 @@ struct ControlPanel: View {
     @Previewable @State var fillOpacity: Double = 1.0
     @Previewable @State var selectedRenderMode: RenderModeOption = .filled
     @Previewable @State var selectedIsolineColor: IsolineColorOption = .gradient
+    @Previewable @State var isolineWidth: Double = 1
     @Previewable @State var selectedSpacing: SpacingOption = .linear
     @Previewable @State var selectedSmoother: SmootherOption = .chaikin2
     @Previewable @State var legendAxis: Axis = .vertical
@@ -299,6 +313,7 @@ struct ControlPanel: View {
         fillOpacity: $fillOpacity,
         selectedRenderMode: $selectedRenderMode,
         selectedIsolineColor: $selectedIsolineColor,
+        isolineWidth: $isolineWidth,
         selectedSpacing: $selectedSpacing,
         selectedSmoother: $selectedSmoother,
         legendAxis: $legendAxis,

@@ -14,9 +14,9 @@ Map {
 
 HeatMap is a native SwiftUI `MapContent` component — no image overlays, no UIKit bridging, no tile servers. It renders vector contour polygons directly inside `Map`, so you get smooth scaling, hit testing, and full integration with the MapKit camera, gestures, and annotations you already use.
 
-![HeatMap screenshot](hero.png)
-
-
+<p align="center">
+  <img src="both.png" width="80%">
+</p>
 
 ## Features
 
@@ -216,7 +216,18 @@ let config = HeatMapConfiguration(levelSpacing: .custom([0.1, 0.5, 1.0, 5.0, 10.
 
 ### 6. Render Modes
 
-By default contours are rendered as filled polygons. You can switch to contour lines (isolines), or combine both:
+By default contours are rendered as filled polygons:
+
+<p align="center">
+  <img src="gradient.png" width="80%">
+</p>
+
+You can switch to contour lines (isolines), or combine filled polygons with an isoline overlay:
+
+<p align="center">
+  <img src="isolines.png" width="45%">
+  <img src="both.png" width="45%">
+</p>
 
 ```swift
 // Contour lines only, colored by gradient

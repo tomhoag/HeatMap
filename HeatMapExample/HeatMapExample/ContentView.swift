@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var fillOpacity: Double = 0.8
     @State private var selectedRenderMode: RenderModeOption = .filled
     @State private var selectedIsolineColor: IsolineColorOption = .gradient
+    @State private var isolineWidth: Double = 1
     @State private var selectedSpacing: SpacingOption = .auto
     @State private var selectedSmoother: SmootherOption = .chaikin2
     @State private var legendAxis: Axis = .vertical
@@ -62,7 +63,7 @@ struct ContentView: View {
             levelSpacing: selectedSpacing.spacing, gridResolution: 120,
             gradient: selectedGradient.gradient,
             fillOpacity: fillOpacity,
-            renderMode: selectedRenderMode.renderMode(color: selectedIsolineColor.color),
+            renderMode: selectedRenderMode.renderMode(lineWidth: CGFloat(isolineWidth), color: selectedIsolineColor.color),
             smoother: selectedSmoother.smoother
         )
     }
@@ -166,6 +167,7 @@ struct ContentView: View {
                                 fillOpacity: $fillOpacity,
                                 selectedRenderMode: $selectedRenderMode,
                                 selectedIsolineColor: $selectedIsolineColor,
+                                isolineWidth: $isolineWidth,
                                 selectedSpacing: $selectedSpacing,
                                 selectedSmoother: $selectedSmoother,
                                 legendAxis: $legendAxis,

@@ -67,11 +67,11 @@ enum RenderModeOption: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    func renderMode(color: Color?) -> HeatMapRenderMode {
+    func renderMode(lineWidth: CGFloat = 1, color: Color?) -> HeatMapRenderMode {
         switch self {
         case .filled: .filled
-        case .isolines: .isolines(color: color)
-        case .both: .filledWithIsolines(color: color)
+        case .isolines: .isolines(lineWidth: lineWidth, color: color)
+        case .both: .filledWithIsolines(lineWidth: lineWidth, color: color)
         }
     }
 }
