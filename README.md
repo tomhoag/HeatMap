@@ -16,9 +16,7 @@ HeatMap is a native SwiftUI `MapContent` component — no image overlays, no UIK
 
 ![HeatMap screenshot](hero.png)
 
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/tomhoag/HeatMap)
 
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/tomhoag/HeatMap)
 
 ## Features
 
@@ -32,6 +30,10 @@ HeatMap is a native SwiftUI `MapContent` component — no image overlays, no UIK
 - **Scales from city blocks to continents** — the same configuration API works whether your data spans a neighborhood or a country.
 
 ## Requirements
+
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/tomhoag/HeatMap)
+
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Ftomhoag%2FHeatMap%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/tomhoag/HeatMap)
 
 - iOS 17+ / macOS 14+ / visionOS 1+
 - Swift 6.0+
