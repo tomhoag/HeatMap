@@ -140,9 +140,9 @@ public struct HeatMapContours: Sendable, Equatable {
     /// smoother. It is `Sendable`-safe and can be called from any isolation
     /// context.
     ///
-    /// This overload runs synchronously and does **not** support task
-    /// cancellation. For cancellation support, use the `async throws`
-    /// variant instead.
+    /// This overload runs synchronously. The internal pipeline includes
+    /// `Task.checkCancellation()` calls, but outside of a `Task` context
+    /// those checks are no-ops and the method cannot throw.
     ///
     /// - Parameters:
     ///   - points: The weighted geographic data points.
@@ -154,31 +154,9 @@ public struct HeatMapContours: Sendable, Equatable {
         from points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) -> HeatMapContours {
-        let grid = DensityGrid.compute(from: points, configuration: configuration)
-        let thresholds = configuration.levelSpacing.resolveThresholds(
-            levels: configuration.contourLevels,
-            minDensity: grid.minDensity,
-            maxDensity: grid.maxDensity,
-            densityValues: grid.values
-        )
-        let result = MarchingSquares.extractContours(
-            from: grid,
-            thresholds: thresholds
-        )
-        let smoothed = result.map { polygon in
-            HeatMapPolygon(
-                level: polygon.level,
-                threshold: polygon.threshold,
-                coordinates: configuration.smoother.smooth(polygon.coordinates)
-            )
-        }
-        // 5. Annular assembly — punch out next-level polygons as holes
-        let annular = AnnularAssembly.assembleAnnular(smoothed)
-        return HeatMapContours(
-            polygons: annular,
-            levels: thresholds.count,
-            configuration: configuration
-        )
+        // Outside a Task context, Task.checkCancellation() never throws.
+        // swiftlint:disable:next force_try
+        try! computeCore(from: points, configuration: configuration)
     }
 
     /// Asynchronously computes contours from the given points and configuration.
@@ -212,43 +190,56 @@ public struct HeatMapContours: Sendable, Equatable {
         let points = Array(points)
         let configuration = configuration
         return try await Task.detached {
-            // 1. Density grid (checks cancellation internally between points)
-            let grid = try DensityGrid.computeCancellable(from: points, configuration: configuration)
-
-            // 2. Resolve thresholds
-            let thresholds = configuration.levelSpacing.resolveThresholds(
-                levels: configuration.contourLevels,
-                minDensity: grid.minDensity,
-                maxDensity: grid.maxDensity,
-                densityValues: grid.values
-            )
-
-            // 3. Contour extraction (checks between each level internally)
-            let result = try MarchingSquares.extractContoursCancellable(
-                from: grid,
-                thresholds: thresholds
-            )
-            try Task.checkCancellation()
-
-            // 4. Smoothing (check between each polygon)
-            let smoothed = try result.map { polygon in
-                try Task.checkCancellation()
-                return HeatMapPolygon(
-                    level: polygon.level,
-                    threshold: polygon.threshold,
-                    coordinates: configuration.smoother.smooth(polygon.coordinates)
-                )
-            }
-
-            // 5. Annular assembly — punch out next-level polygons as holes
-            try Task.checkCancellation()
-            let annular = try AnnularAssembly.assembleAnnularCancellable(smoothed)
-
-            return HeatMapContours(
-                polygons: annular,
-                levels: thresholds.count,
-                configuration: configuration
-            )
+            try computeCore(from: points, configuration: configuration)
         }.value
+    }
+
+    // MARK: - Private
+
+    /// Shared implementation for both the synchronous and async compute
+    /// entry points.
+    ///
+    /// Each stage checks for `Task` cancellation at natural boundaries.
+    /// When called outside of a `Task` context (i.e. from the synchronous
+    /// overload), those checks are no-ops.
+    private static func computeCore<P: HeatMapable>(
+        from points: [P],
+        configuration: HeatMapConfiguration
+    ) throws -> HeatMapContours {
+        // 1. Density grid (checks cancellation internally between points)
+        let grid = try DensityGrid.compute(from: points, configuration: configuration)
+
+        // 2. Resolve thresholds
+        let thresholds = configuration.levelSpacing.resolveThresholds(
+            levels: configuration.contourLevels,
+            minDensity: grid.minDensity,
+            maxDensity: grid.maxDensity,
+            densityValues: grid.values
+        )
+
+        // 3. Contour extraction (checks between each level internally)
+        let result = try MarchingSquares.extractContours(
+            from: grid,
+            thresholds: thresholds
+        )
+
+        // 4. Smoothing (check between each polygon)
+        let smoothed = try result.map { polygon in
+            try Task.checkCancellation()
+            return HeatMapPolygon(
+                level: polygon.level,
+                threshold: polygon.threshold,
+                coordinates: configuration.smoother.smooth(polygon.coordinates)
+            )
+        }
+
+        // 5. Annular assembly — punch out next-level polygons as holes
+        let annular = try AnnularAssembly.assembleAnnular(smoothed)
+
+        return HeatMapContours(
+            polygons: annular,
+            levels: thresholds.count,
+            configuration: configuration
+        )
     }
 }

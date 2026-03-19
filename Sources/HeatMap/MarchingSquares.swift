@@ -35,45 +35,6 @@ enum MarchingSquares {
     /// Extracts contour polygons from the density grid at the given
     /// thresholds.
     ///
-    /// This non-throwing variant is used by the synchronous
-    /// ``HeatMapContours/compute(from:configuration:)-swift.type.method``
-    /// path where cancellation checking is not needed.
-    ///
-    /// - Parameters:
-    ///   - grid: The density grid to extract contours from.
-    ///   - thresholds: The density threshold values, sorted ascending.
-    /// - Returns: All extracted polygons, sorted from lowest level
-    ///   (outermost) to highest (innermost).
-    static func extractContours(
-        from grid: DensityGrid,
-        thresholds: [Double]
-    ) -> [HeatMapPolygon] {
-        extractContoursCore(from: grid, thresholds: thresholds, checkCancellation: false)
-    }
-
-    /// Extracts contour polygons from the density grid at the given
-    /// thresholds, checking for Task cancellation between levels.
-    ///
-    /// Use this variant from async contexts where the calling Task may
-    /// be cancelled.
-    ///
-    /// - Parameters:
-    ///   - grid: The density grid to extract contours from.
-    ///   - thresholds: The density threshold values, sorted ascending.
-    /// - Returns: All extracted polygons, sorted from lowest level
-    ///   (outermost) to highest (innermost).
-    /// - Throws: `CancellationError` if the Task is cancelled.
-    static func extractContoursCancellable(
-        from grid: DensityGrid,
-        thresholds: [Double]
-    ) throws -> [HeatMapPolygon] {
-        let result = extractContoursCore(from: grid, thresholds: thresholds, checkCancellation: true)
-        try Task.checkCancellation()
-        return result
-    }
-
-    /// Core contour extraction implementation.
-    ///
     /// For each threshold, the algorithm:
     /// 1. Generates directed edge segments using the marching squares cases.
     /// 2. Assembles segments into closed polygon rings.
@@ -82,19 +43,20 @@ enum MarchingSquares {
     /// The level index for each polygon is derived from its position in the
     /// thresholds array (0-based).
     ///
+    /// This method checks for `Task` cancellation between threshold levels.
+    /// When called outside of a `Task` context, the cancellation checks are
+    /// a no-op.
+    ///
     /// - Parameters:
     ///   - grid: The density grid to extract contours from.
     ///   - thresholds: The density threshold values, sorted ascending.
-    ///   - checkCancellation: Whether to check `Task.isCancelled` between
-    ///     threshold levels.
     /// - Returns: All extracted polygons, sorted from lowest level
-    ///   (outermost) to highest (innermost). Returns an empty array if
-    ///   cancelled.
-    private static func extractContoursCore(
+    ///   (outermost) to highest (innermost).
+    /// - Throws: `CancellationError` if the current task is cancelled.
+    static func extractContours(
         from grid: DensityGrid,
-        thresholds: [Double],
-        checkCancellation: Bool
-    ) -> [HeatMapPolygon] {
+        thresholds: [Double]
+    ) throws -> [HeatMapPolygon] {
         guard grid.rows > 1, grid.columns > 1, !thresholds.isEmpty else {
             return []
         }
@@ -107,7 +69,7 @@ enum MarchingSquares {
         var allPolygons: [HeatMapPolygon] = []
 
         for (level, threshold) in thresholds.enumerated() {
-            if checkCancellation, Task.isCancelled { return allPolygons }
+            try Task.checkCancellation()
 
             let segments = generateSegments(grid: grid, threshold: threshold)
             let rings = assembleRings(from: segments)

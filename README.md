@@ -268,7 +268,7 @@ The async `compute` method supports cooperative task cancellation. It checks for
 
 SwiftUI's `.task(id:)` modifier automatically cancels the previous task when the `id` value changes, so adjusting a slider or switching datasets cancels any in-flight computation before starting a new one. Using `try?` silently discards the `CancellationError` and keeps the previous contours on screen until the new computation finishes.
 
-The synchronous overload (`compute(from:configuration:) -> HeatMapContours`) does not check for cancellation. Use the async variant when you need cancellation support.
+The synchronous overload (`compute(from:configuration:) -> HeatMapContours`) shares the same pipeline internally. The cancellation checks are no-ops outside of a `Task` context, so the synchronous overload behaves identically to before while the async variant gets full cancellation support with no code duplication.
 
 ### 8. Access Contour Geometry
 

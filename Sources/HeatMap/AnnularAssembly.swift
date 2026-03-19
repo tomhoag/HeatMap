@@ -26,58 +26,16 @@ enum AnnularAssembly {
     /// them as interior holes. The innermost level (highest level index)
     /// has no holes.
     ///
-    /// - Parameter polygons: Flat contour polygons sorted by level
-    ///   (ascending).
-    /// - Returns: Polygons with ``HeatMapPolygon/interiorPolygons``
-    ///   populated.
-    static func assembleAnnular(_ polygons: [HeatMapPolygon]) -> [HeatMapPolygon] {
-        guard !polygons.isEmpty else { return [] }
-
-        let grouped = Dictionary(grouping: polygons, by: \.level)
-        let sortedLevels = grouped.keys.sorted()
-
-        var result: [HeatMapPolygon] = []
-        result.reserveCapacity(polygons.count)
-
-        for (levelIndex, level) in sortedLevels.enumerated() {
-            let outerPolygons = grouped[level]!
-
-            // Innermost level has no holes
-            guard levelIndex < sortedLevels.count - 1 else {
-                result.append(contentsOf: outerPolygons)
-                continue
-            }
-
-            let nextLevel = sortedLevels[levelIndex + 1]
-            let innerCandidates = grouped[nextLevel]!
-
-            for outer in outerPolygons {
-                let holes = findInteriorPolygons(
-                    outer: outer,
-                    candidates: innerCandidates
-                )
-                result.append(HeatMapPolygon(
-                    id: outer.id,
-                    level: outer.level,
-                    threshold: outer.threshold,
-                    coordinates: outer.coordinates,
-                    interiorPolygons: holes
-                ))
-            }
-        }
-
-        return result
-    }
-
-    /// Cancellable variant that checks for Task cancellation between
-    /// levels.
+    /// This method checks for `Task` cancellation between levels. When
+    /// called outside of a `Task` context, the cancellation checks are
+    /// a no-op.
     ///
     /// - Parameter polygons: Flat contour polygons sorted by level
     ///   (ascending).
     /// - Returns: Polygons with ``HeatMapPolygon/interiorPolygons``
     ///   populated.
-    /// - Throws: `CancellationError` if the Task is cancelled.
-    static func assembleAnnularCancellable(
+    /// - Throws: `CancellationError` if the current task is cancelled.
+    static func assembleAnnular(
         _ polygons: [HeatMapPolygon]
     ) throws -> [HeatMapPolygon] {
         guard !polygons.isEmpty else { return [] }
