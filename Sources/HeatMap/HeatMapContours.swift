@@ -168,8 +168,10 @@ public struct HeatMapContours: Sendable, Equatable {
                 coordinates: configuration.smoother.smooth(polygon.coordinates)
             )
         }
+        // 5. Annular assembly — punch out next-level polygons as holes
+        let annular = AnnularAssembly.assembleAnnular(smoothed)
         return HeatMapContours(
-            polygons: smoothed,
+            polygons: annular,
             levels: thresholds.count,
             configuration: configuration
         )
@@ -235,8 +237,12 @@ public struct HeatMapContours: Sendable, Equatable {
                 )
             }
 
+            // 5. Annular assembly — punch out next-level polygons as holes
+            try Task.checkCancellation()
+            let annular = try AnnularAssembly.assembleAnnularCancellable(smoothed)
+
             return HeatMapContours(
-                polygons: smoothed,
+                polygons: annular,
                 levels: thresholds.count,
                 configuration: configuration
             )

@@ -38,6 +38,7 @@ import CoreLocation
 /// ### Accessing Geometry
 ///
 /// - ``coordinates``
+/// - ``interiorPolygons``
 ///
 /// ### Geometry Queries
 ///
@@ -70,6 +71,18 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
     /// have already been smoothed by the configured ``PolygonSmoother``.
     public let coordinates: [CLLocationCoordinate2D]
 
+    /// The interior polygon coordinates (holes) subtracted from this polygon.
+    ///
+    /// Each element is a closed polygon ring representing a cutout region.
+    /// These correspond to the next-higher contour level polygons that are
+    /// spatially contained within this polygon's outer ring. The innermost
+    /// contour level has no interior polygons.
+    ///
+    /// When rendered, these holes create annular (ring-shaped) regions that
+    /// show only the density band for this contour level, eliminating
+    /// opacity stacking artifacts from overlapping polygons.
+    public let interiorPolygons: [[CLLocationCoordinate2D]]
+
     /// Creates a polygon with the given identifier.
     ///
     /// - Parameters:
@@ -77,16 +90,20 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
     ///   - level: The zero-based contour level index.
     ///   - threshold: The density threshold value.
     ///   - coordinates: The polygon vertices in geographic coordinates.
+    ///   - interiorPolygons: Coordinate arrays for holes to cut out.
+    ///     Defaults to an empty array (no holes).
     public init(
         id: UUID,
         level: Int,
         threshold: Double,
-        coordinates: [CLLocationCoordinate2D]
+        coordinates: [CLLocationCoordinate2D],
+        interiorPolygons: [[CLLocationCoordinate2D]] = []
     ) {
         self.id = id
         self.level = level
         self.threshold = threshold
         self.coordinates = coordinates
+        self.interiorPolygons = interiorPolygons
     }
 
     /// Creates a polygon with an auto-generated identifier.
@@ -97,10 +114,18 @@ public struct HeatMapPolygon: Sendable, Identifiable, Equatable {
     ///   - level: The zero-based contour level index.
     ///   - threshold: The density threshold value.
     ///   - coordinates: The polygon vertices in geographic coordinates.
-    init(level: Int, threshold: Double, coordinates: [CLLocationCoordinate2D]) {
+    ///   - interiorPolygons: Coordinate arrays for holes to cut out.
+    ///     Defaults to an empty array (no holes).
+    init(
+        level: Int,
+        threshold: Double,
+        coordinates: [CLLocationCoordinate2D],
+        interiorPolygons: [[CLLocationCoordinate2D]] = []
+    ) {
         self.id = UUID()
         self.level = level
         self.threshold = threshold
         self.coordinates = coordinates
+        self.interiorPolygons = interiorPolygons
     }
 }

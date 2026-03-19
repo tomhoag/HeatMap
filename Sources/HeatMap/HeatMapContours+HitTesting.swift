@@ -8,17 +8,21 @@
 import CoreLocation
 
 extension HeatMapContours {
-    /// Returns the contour polygons that contain the given coordinate.
+    /// Returns the contour polygons whose density band contains the
+    /// given coordinate.
+    ///
+    /// Each polygon represents an annular density band — the region
+    /// between its threshold and the next level's threshold. A
+    /// coordinate typically falls within exactly one polygon (the band
+    /// it sits in) rather than all enclosing levels.
     ///
     /// The returned array preserves the default ordering — lowest level
-    /// (outermost) first, highest level (innermost) last. A point inside
-    /// a high-density region will typically be contained by multiple nested
-    /// polygons at increasing levels.
+    /// (outermost) first, highest level (innermost) last.
     ///
     /// ```swift
     /// let hit = contours.contours(containing: tappedCoordinate)
-    /// if let innermost = hit.last {
-    ///     print("Density band: level \(innermost.level), threshold \(innermost.threshold)")
+    /// if let band = hit.first {
+    ///     print("Density band: level \(band.level), threshold \(band.threshold)")
     /// }
     /// ```
     ///

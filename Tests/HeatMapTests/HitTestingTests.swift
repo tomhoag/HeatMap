@@ -120,16 +120,95 @@ struct HitTestingTests {
         }
     }
 
-    @Test func innerPointContainedByMorePolygonsThanOuterPoint() {
+    @Test func innerPointHitsHigherLevelThanOuterPoint() {
         let config = HeatMapConfiguration(contourLevels: 10)
         let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
-        // Center of the cluster (should be inside many contours)
+        // Center of the cluster (should be inside a high-level band)
         let inner = CLLocationCoordinate2D(latitude: 37.775, longitude: -122.4186)
-        // Edge of the cluster (should be inside fewer contours)
+        // Edge of the cluster (should be inside a lower-level band)
         let outer = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4220)
         let innerHit = contours.contours(containing: inner)
         let outerHit = contours.contours(containing: outer)
-        #expect(innerHit.count >= outerHit.count)
+        // With annular polygons, each point typically matches exactly one band
+        if let innerBand = innerHit.last, let outerBand = outerHit.last {
+            #expect(innerBand.level >= outerBand.level)
+        }
+    }
+
+    // MARK: - Hole-Aware Containment
+
+    @Test func pointInsideHoleReturnsFalse() {
+        let polygon = HeatMapPolygon(
+            id: UUID(), level: 0, threshold: 1.0,
+            coordinates: [
+                CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                CLLocationCoordinate2D(latitude: 0, longitude: 4),
+                CLLocationCoordinate2D(latitude: 4, longitude: 4),
+                CLLocationCoordinate2D(latitude: 4, longitude: 0),
+            ],
+            interiorPolygons: [[
+                CLLocationCoordinate2D(latitude: 1, longitude: 1),
+                CLLocationCoordinate2D(latitude: 1, longitude: 3),
+                CLLocationCoordinate2D(latitude: 3, longitude: 3),
+                CLLocationCoordinate2D(latitude: 3, longitude: 1),
+            ]]
+        )
+        let holePoint = CLLocationCoordinate2D(latitude: 2, longitude: 2)
+        #expect(!polygon.contains(holePoint))
+    }
+
+    @Test func pointInAnnularRingReturnsTrue() {
+        let polygon = HeatMapPolygon(
+            id: UUID(), level: 0, threshold: 1.0,
+            coordinates: [
+                CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                CLLocationCoordinate2D(latitude: 0, longitude: 4),
+                CLLocationCoordinate2D(latitude: 4, longitude: 4),
+                CLLocationCoordinate2D(latitude: 4, longitude: 0),
+            ],
+            interiorPolygons: [[
+                CLLocationCoordinate2D(latitude: 1, longitude: 1),
+                CLLocationCoordinate2D(latitude: 1, longitude: 3),
+                CLLocationCoordinate2D(latitude: 3, longitude: 3),
+                CLLocationCoordinate2D(latitude: 3, longitude: 1),
+            ]]
+        )
+        let ringPoint = CLLocationCoordinate2D(latitude: 0.5, longitude: 0.5)
+        #expect(polygon.contains(ringPoint))
+    }
+
+    @Test func pointOutsideAnnularPolygonReturnsFalse() {
+        let polygon = HeatMapPolygon(
+            id: UUID(), level: 0, threshold: 1.0,
+            coordinates: [
+                CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                CLLocationCoordinate2D(latitude: 0, longitude: 4),
+                CLLocationCoordinate2D(latitude: 4, longitude: 4),
+                CLLocationCoordinate2D(latitude: 4, longitude: 0),
+            ],
+            interiorPolygons: [[
+                CLLocationCoordinate2D(latitude: 1, longitude: 1),
+                CLLocationCoordinate2D(latitude: 1, longitude: 3),
+                CLLocationCoordinate2D(latitude: 3, longitude: 3),
+                CLLocationCoordinate2D(latitude: 3, longitude: 1),
+            ]]
+        )
+        let outsidePoint = CLLocationCoordinate2D(latitude: 5, longitude: 5)
+        #expect(!polygon.contains(outsidePoint))
+    }
+
+    @Test func noHolesBackwardCompatible() {
+        let polygon = HeatMapPolygon(
+            id: UUID(), level: 0, threshold: 1.0,
+            coordinates: [
+                CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                CLLocationCoordinate2D(latitude: 0, longitude: 2),
+                CLLocationCoordinate2D(latitude: 2, longitude: 2),
+                CLLocationCoordinate2D(latitude: 2, longitude: 0),
+            ]
+        )
+        let inside = CLLocationCoordinate2D(latitude: 1, longitude: 1)
+        #expect(polygon.contains(inside))
     }
 
     @Test func separatedClustersHitTestIndependent() {

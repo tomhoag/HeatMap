@@ -76,7 +76,7 @@ public struct HeatMapLayer: MapContent {
     @MainActor
     public var body: some MapContent {
         ForEach(contours) { polygon in
-            MapPolygon(coordinates: polygon.coordinates)
+            MapPolygon(Self.makeMKPolygon(from: polygon))
                 .foregroundStyle(polygonFillColor(for: polygon.level))
                 .stroke(polygonStrokeColor(for: polygon.level), lineWidth: polygonStrokeLineWidth)
         }
@@ -145,5 +145,39 @@ public struct HeatMapLayer: MapContent {
         case .isolines(let lineWidth, _), .filledWithIsolines(let lineWidth, _):
             return lineWidth
         }
+    }
+
+    // MARK: - MKPolygon Construction
+
+    /// Constructs an `MKPolygon` with interior holes from a
+    /// ``HeatMapPolygon``.
+    ///
+    /// When the polygon has interior polygons, they are created as
+    /// `MKPolygon` instances and passed as `interiorPolygons` to
+    /// produce annular (ring-shaped) regions. When there are no
+    /// interior polygons, the result is a simple `MKPolygon`.
+    ///
+    /// - Parameter polygon: The contour polygon with optional holes.
+    /// - Returns: An `MKPolygon` ready for use with `MapPolygon(_:)`.
+    private static func makeMKPolygon(from polygon: HeatMapPolygon) -> MKPolygon {
+        var outerCoords = polygon.coordinates
+        if polygon.interiorPolygons.isEmpty {
+            return MKPolygon(
+                coordinates: &outerCoords,
+                count: outerCoords.count
+            )
+        }
+        let interiors = polygon.interiorPolygons.map { hole in
+            var holeCoords = hole
+            return MKPolygon(
+                coordinates: &holeCoords,
+                count: holeCoords.count
+            )
+        }
+        return MKPolygon(
+            coordinates: &outerCoords,
+            count: outerCoords.count,
+            interiorPolygons: interiors
+        )
     }
 }
