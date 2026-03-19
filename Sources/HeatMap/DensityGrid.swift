@@ -199,6 +199,140 @@ struct DensityGrid: Sendable {
         )
     }
 
+    /// Computes a density grid with support for cooperative task cancellation.
+    ///
+    /// This method performs the same computation as ``compute(from:configuration:)``
+    /// but checks for `Task` cancellation between points during the Gaussian
+    /// kernel accumulation phase. If the current task has been cancelled, the
+    /// method throws `CancellationError` and returns early.
+    ///
+    /// - Parameters:
+    ///   - points: The weighted geographic data points.
+    ///   - configuration: The parameters controlling grid size, kernel radius,
+    ///     and padding.
+    /// - Returns: A fully populated density grid.
+    /// - Throws: `CancellationError` if the task is cancelled during computation.
+    static func computeCancellable<P: HeatMapable>(
+        from points: [P],
+        configuration: HeatMapConfiguration
+    ) throws -> DensityGrid {
+        guard !points.isEmpty else {
+            return DensityGrid(
+                values: [], rows: 0, columns: 0,
+                minLatitude: 0, maxLatitude: 0,
+                minLongitude: 0, maxLongitude: 0,
+                latitudeStep: 0, longitudeStep: 0,
+                minDensity: 0, maxDensity: 0
+            )
+        }
+
+        // 1. Compute bounding box of all points
+        var minLat = Double.greatestFiniteMagnitude
+        var maxLat = -Double.greatestFiniteMagnitude
+        var minLon = Double.greatestFiniteMagnitude
+        var maxLon = -Double.greatestFiniteMagnitude
+
+        for point in points {
+            minLat = min(minLat, point.coordinate.latitude)
+            maxLat = max(maxLat, point.coordinate.latitude)
+            minLon = min(minLon, point.coordinate.longitude)
+            maxLon = max(maxLon, point.coordinate.longitude)
+        }
+
+        // 2. Expand bounding box by radius * paddingFactor
+        let padding = configuration.radius * configuration.paddingFactor
+        let centerLat = (minLat + maxLat) / 2
+        let deltaLat = padding / GeoConversions.metersPerDegreeLat
+        let deltaLon = padding / GeoConversions.metersPerDegreeLon(at: centerLat)
+
+        minLat -= deltaLat
+        maxLat += deltaLat
+        minLon -= deltaLon
+        maxLon += deltaLon
+
+        // 3. Determine grid dimensions based on aspect ratio in meters
+        let heightMeters = (maxLat - minLat) * GeoConversions.metersPerDegreeLat
+        let widthMeters = (maxLon - minLon) * GeoConversions.metersPerDegreeLon(at: centerLat)
+
+        let resolution = max(configuration.gridResolution, 2)
+        let rows: Int
+        let columns: Int
+
+        if heightMeters >= widthMeters {
+            rows = resolution
+            columns = max(2, Int(Double(resolution) * widthMeters / heightMeters))
+        } else {
+            columns = resolution
+            rows = max(2, Int(Double(resolution) * heightMeters / widthMeters))
+        }
+
+        let latStep = (maxLat - minLat) / Double(rows)
+        let lonStep = (maxLon - minLon) / Double(columns)
+
+        // 4. Accumulate Gaussian kernel density with cancellation checks
+        let sigma = configuration.radius / 3.0
+        let twoSigmaSquared = 2.0 * sigma * sigma
+        let kernelRadiusLat = (3.0 * sigma) / GeoConversions.metersPerDegreeLat
+        let kernelRadiusLon = (3.0 * sigma) / GeoConversions.metersPerDegreeLon(at: centerLat)
+
+        var grid = [Double](repeating: 0, count: rows * columns)
+
+        // Check cancellation every N points to balance responsiveness with overhead
+        let checkInterval = max(1, points.count / 100)
+
+        for (index, point) in points.enumerated() {
+            if index % checkInterval == 0 {
+                try Task.checkCancellation()
+            }
+
+            assert(point.weight >= 0, "HeatMapable.weight must be non-negative, got \(point.weight)")
+            let pointLat = point.coordinate.latitude
+            let pointLon = point.coordinate.longitude
+
+            let rowStart = max(0, Int((pointLat - kernelRadiusLat - minLat) / latStep))
+            let rowEnd = min(rows - 1, Int((pointLat + kernelRadiusLat - minLat) / latStep))
+            let colStart = max(0, Int((pointLon - kernelRadiusLon - minLon) / lonStep))
+            let colEnd = min(columns - 1, Int((pointLon + kernelRadiusLon - minLon) / lonStep))
+
+            for row in rowStart...rowEnd {
+                let cellLat = minLat + (Double(row) + 0.5) * latStep
+                let dy = (cellLat - pointLat) * GeoConversions.metersPerDegreeLat
+                let lonScale = GeoConversions.metersPerDegreeLon(at: cellLat)
+
+                for col in colStart...colEnd {
+                    let cellLon = minLon + (Double(col) + 0.5) * lonStep
+                    let dx = (cellLon - pointLon) * lonScale
+
+                    let distanceSquared = dx * dx + dy * dy
+                    let value = point.weight * exp(-distanceSquared / twoSigmaSquared)
+                    grid[row * columns + col] += value
+                }
+            }
+        }
+
+        // 5. Find min/max density
+        var gridMin = Double.greatestFiniteMagnitude
+        var gridMax = -Double.greatestFiniteMagnitude
+        for value in grid {
+            gridMin = min(gridMin, value)
+            gridMax = max(gridMax, value)
+        }
+
+        return DensityGrid(
+            values: grid,
+            rows: rows,
+            columns: columns,
+            minLatitude: minLat,
+            maxLatitude: maxLat,
+            minLongitude: minLon,
+            maxLongitude: maxLon,
+            latitudeStep: latStep,
+            longitudeStep: lonStep,
+            minDensity: gridMin,
+            maxDensity: gridMax
+        )
+    }
+
     /// Returns the density value at the given row and column.
     ///
     /// - Parameters:

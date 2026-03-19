@@ -252,7 +252,7 @@ Use `.task(id:)` to recompute contours whenever the configuration changes:
 
 var body: some View {
     Map {
-        if let contours { 
+        if let contours {
             HeatMapLayer(contours: contours)
         }
     }
@@ -261,6 +261,14 @@ var body: some View {
     }
 }
 ```
+
+#### Cancellation
+
+The async `compute` method supports cooperative task cancellation. It checks for cancellation at natural checkpoints throughout the pipeline — during density grid computation, between contour levels, between polygon smoothing passes, and during annular assembly. If the task is cancelled, the method throws `CancellationError` and returns early.
+
+SwiftUI's `.task(id:)` modifier automatically cancels the previous task when the `id` value changes, so adjusting a slider or switching datasets cancels any in-flight computation before starting a new one. Using `try?` silently discards the `CancellationError` and keeps the previous contours on screen until the new computation finishes.
+
+The synchronous overload (`compute(from:configuration:) -> HeatMapContours`) does not check for cancellation. Use the async variant when you need cancellation support.
 
 ### 8. Access Contour Geometry
 

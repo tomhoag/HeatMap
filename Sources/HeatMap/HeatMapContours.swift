@@ -133,12 +133,16 @@ public struct HeatMapContours: Sendable, Equatable {
     /// are rendered (filled polygons, isolines, or both).
     public var renderMode: HeatMapRenderMode { configuration.renderMode }
 
-    /// Computes contours from the given points and configuration.
+    /// Synchronously computes contours from the given points and configuration.
     ///
     /// This method builds a ``DensityGrid``, extracts contour polygons via
     /// the marching squares algorithm, and applies the configured polygon
     /// smoother. It is `Sendable`-safe and can be called from any isolation
     /// context.
+    ///
+    /// This overload runs synchronously and does **not** support task
+    /// cancellation. For cancellation support, use the `async throws`
+    /// variant instead.
     ///
     /// - Parameters:
     ///   - points: The weighted geographic data points.
@@ -208,9 +212,8 @@ public struct HeatMapContours: Sendable, Equatable {
         let points = Array(points)
         let configuration = configuration
         return try await Task.detached {
-            // 1. Density grid
-            let grid = DensityGrid.compute(from: points, configuration: configuration)
-            try Task.checkCancellation()
+            // 1. Density grid (checks cancellation internally between points)
+            let grid = try DensityGrid.computeCancellable(from: points, configuration: configuration)
 
             // 2. Resolve thresholds
             let thresholds = configuration.levelSpacing.resolveThresholds(
