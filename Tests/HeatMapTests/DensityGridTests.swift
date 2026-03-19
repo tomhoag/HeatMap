@@ -8,8 +8,8 @@ struct DensityGridTests {
 
     // MARK: - Empty / Degenerate Input
 
-    @Test func emptyPointsReturnsEmptyGrid() {
-        let grid = DensityGrid.compute(from: [TestPoint](), configuration: defaultConfig)
+    @Test func emptyPointsReturnsEmptyGrid() throws {
+        let grid = try DensityGrid.compute(from: [TestPoint](), configuration: defaultConfig)
         #expect(grid.rows == 0)
         #expect(grid.columns == 0)
         #expect(grid.values.isEmpty)
@@ -19,15 +19,15 @@ struct DensityGridTests {
 
     // MARK: - Single Point
 
-    @Test func singlePointProducesNonZeroDensity() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func singlePointProducesNonZeroDensity() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
         #expect(grid.rows >= 2)
         #expect(grid.columns >= 2)
         #expect(grid.maxDensity > 0)
     }
 
-    @Test func singlePointPeakNearCenter() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func singlePointPeakNearCenter() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
 
         // Find the cell with the maximum density
         var maxVal = 0.0
@@ -53,28 +53,28 @@ struct DensityGridTests {
 
     // MARK: - Grid Dimensions
 
-    @Test func gridDimensionsRespectResolution() {
+    @Test func gridDimensionsRespectResolution() throws {
         let config = HeatMapConfiguration(gridResolution: 50)
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: config)
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: config)
         // For a single point, bounding box is a square after padding, so both axes = resolution
         #expect(grid.rows == 50 || grid.columns == 50)
     }
 
-    @Test func gridDimensionsMinimumTwo() {
+    @Test func gridDimensionsMinimumTwo() throws {
         let config = HeatMapConfiguration(gridResolution: 2)
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: config)
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: config)
         #expect(grid.rows >= 2)
         #expect(grid.columns >= 2)
     }
 
     // MARK: - Weight
 
-    @Test func higherWeightProducesHigherDensity() {
+    @Test func higherWeightProducesHigherDensity() throws {
         let light = TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 1.0)
         let heavy = TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 5.0)
 
-        let gridLight = DensityGrid.compute(from: [light], configuration: defaultConfig)
-        let gridHeavy = DensityGrid.compute(from: [heavy], configuration: defaultConfig)
+        let gridLight = try DensityGrid.compute(from: [light], configuration: defaultConfig)
+        let gridHeavy = try DensityGrid.compute(from: [heavy], configuration: defaultConfig)
 
         // maxDensity scales linearly with weight
         let ratio = gridHeavy.maxDensity / gridLight.maxDensity
@@ -83,20 +83,20 @@ struct DensityGridTests {
 
     // MARK: - Padding
 
-    @Test func paddingExpandsBoundingBox() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func paddingExpandsBoundingBox() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
         #expect(grid.minLatitude < sanFrancisco.coordinate.latitude)
         #expect(grid.maxLatitude > sanFrancisco.coordinate.latitude)
         #expect(grid.minLongitude < sanFrancisco.coordinate.longitude)
         #expect(grid.maxLongitude > sanFrancisco.coordinate.longitude)
     }
 
-    @Test func paddingFactorAffectsBounds() {
+    @Test func paddingFactorAffectsBounds() throws {
         let configSmall = HeatMapConfiguration(paddingFactor: 1.0)
         let configLarge = HeatMapConfiguration(paddingFactor: 3.0)
 
-        let gridSmall = DensityGrid.compute(from: [sanFrancisco], configuration: configSmall)
-        let gridLarge = DensityGrid.compute(from: [sanFrancisco], configuration: configLarge)
+        let gridSmall = try DensityGrid.compute(from: [sanFrancisco], configuration: configSmall)
+        let gridLarge = try DensityGrid.compute(from: [sanFrancisco], configuration: configLarge)
 
         let latRangeSmall = gridSmall.maxLatitude - gridSmall.minLatitude
         let latRangeLarge = gridLarge.maxLatitude - gridLarge.minLatitude
@@ -105,16 +105,16 @@ struct DensityGridTests {
 
     // MARK: - value(row:col:)
 
-    @Test func valueOutOfBoundsReturnsZero() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func valueOutOfBoundsReturnsZero() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
         #expect(grid.value(row: -1, col: 0) == 0)
         #expect(grid.value(row: 0, col: -1) == 0)
         #expect(grid.value(row: grid.rows, col: 0) == 0)
         #expect(grid.value(row: 0, col: grid.columns) == 0)
     }
 
-    @Test func valueInBoundsReturnsPositive() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func valueInBoundsReturnsPositive() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
         var foundPositive = false
         for row in 0..<grid.rows {
             for col in 0..<grid.columns {
@@ -130,15 +130,15 @@ struct DensityGridTests {
 
     // MARK: - coordinate(row:col:)
 
-    @Test func coordinateAtOrigin() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func coordinateAtOrigin() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
         let origin = grid.coordinate(row: 0, col: 0)
         #expect(abs(origin.latitude - grid.minLatitude) < 1e-6)
         #expect(abs(origin.longitude - grid.minLongitude) < 1e-6)
     }
 
-    @Test func coordinateMonotonicity() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func coordinateMonotonicity() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
         let a = grid.coordinate(row: 0, col: 0)
         let b = grid.coordinate(row: 1, col: 0)
         let c = grid.coordinate(row: 0, col: 1)
@@ -148,8 +148,8 @@ struct DensityGridTests {
 
     // MARK: - Density Behavior
 
-    @Test func densityDecaysWithDistance() {
-        let grid = DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
+    @Test func densityDecaysWithDistance() throws {
+        let grid = try DensityGrid.compute(from: [sanFrancisco], configuration: defaultConfig)
 
         // Find the peak cell
         var maxVal = 0.0
@@ -173,7 +173,7 @@ struct DensityGridTests {
         #expect(farValue < maxVal)
     }
 
-    @Test func multiplePointsProduceHigherDensityThanSingle() {
+    @Test func multiplePointsProduceHigherDensityThanSingle() throws {
         let single = [TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 1.0)]
         let triple = [
             TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 1.0),
@@ -181,12 +181,12 @@ struct DensityGridTests {
             TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 1.0),
         ]
 
-        let gridSingle = DensityGrid.compute(from: single, configuration: defaultConfig)
-        let gridTriple = DensityGrid.compute(from: triple, configuration: defaultConfig)
+        let gridSingle = try DensityGrid.compute(from: single, configuration: defaultConfig)
+        let gridTriple = try DensityGrid.compute(from: triple, configuration: defaultConfig)
         #expect(gridTriple.maxDensity > gridSingle.maxDensity)
     }
 
-    @Test func collocatedPointsDensityEqualsSum() {
+    @Test func collocatedPointsDensityEqualsSum() throws {
         let twoPoints = [
             TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 3.0),
             TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 4.0),
@@ -195,27 +195,27 @@ struct DensityGridTests {
             TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 7.0),
         ]
 
-        let gridTwo = DensityGrid.compute(from: twoPoints, configuration: defaultConfig)
-        let gridOne = DensityGrid.compute(from: onePoint, configuration: defaultConfig)
+        let gridTwo = try DensityGrid.compute(from: twoPoints, configuration: defaultConfig)
+        let gridOne = try DensityGrid.compute(from: onePoint, configuration: defaultConfig)
 
         #expect(abs(gridTwo.maxDensity - gridOne.maxDensity) < 1e-6)
     }
 
-    @Test func zeroWeightProducesZeroDensity() {
+    @Test func zeroWeightProducesZeroDensity() throws {
         let point = TestPoint(latitude: 37.7749, longitude: -122.4194, weight: 0)
-        let grid = DensityGrid.compute(from: [point], configuration: defaultConfig)
+        let grid = try DensityGrid.compute(from: [point], configuration: defaultConfig)
         #expect(grid.maxDensity == 0)
     }
 
-    @Test func radiusAffectsSpread() {
+    @Test func radiusAffectsSpread() throws {
         // A narrower radius concentrates density more, resulting in a higher
         // peak value for the same weight. A wider radius spreads the density
         // over a larger area, producing a lower peak.
         let configNarrow = HeatMapConfiguration(radius: 100)
         let configWide = HeatMapConfiguration(radius: 1000)
 
-        let gridNarrow = DensityGrid.compute(from: [sanFrancisco], configuration: configNarrow)
-        let gridWide = DensityGrid.compute(from: [sanFrancisco], configuration: configWide)
+        let gridNarrow = try DensityGrid.compute(from: [sanFrancisco], configuration: configNarrow)
+        let gridWide = try DensityGrid.compute(from: [sanFrancisco], configuration: configWide)
 
         #expect(gridNarrow.maxDensity > gridWide.maxDensity)
     }

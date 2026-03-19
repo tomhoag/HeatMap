@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 import Testing
 @testable import HeatMap
 
@@ -29,25 +28,17 @@ struct HeatMapContoursTests {
         #expect(contours.levels == 7)
     }
 
-    @Test func computePreservesGradient() {
-        let config = HeatMapConfiguration(gradient: .cool)
-        let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
-        #expect(contours.gradient == .cool)
-    }
-
     @Test func defaultConfiguration() {
         let contours = HeatMapContours.compute(from: tightCluster)
         #expect(contours.levels == 10)
-        #expect(contours.gradient == .thermal)
     }
 
     // MARK: - Async Compute
 
     @Test func asyncComputePreservesConfiguration() async throws {
-        let config = HeatMapConfiguration(contourLevels: 5, gradient: .warm)
+        let config = HeatMapConfiguration(contourLevels: 5)
         let contours = try await HeatMapContours.compute(from: tightCluster, configuration: config)
         #expect(contours.levels == 5)
-        #expect(contours.gradient == .warm)
         #expect(!contours.polygons.isEmpty)
     }
 
@@ -100,18 +91,6 @@ struct HeatMapContoursTests {
         #expect(a != b)
     }
 
-    @Test func contoursNotEqualWhenDifferentGradient() {
-        let a = HeatMapContours.compute(
-            from: tightCluster,
-            configuration: HeatMapConfiguration(gradient: .thermal)
-        )
-        let b = HeatMapContours.compute(
-            from: tightCluster,
-            configuration: HeatMapConfiguration(gradient: .cool)
-        )
-        #expect(a != b)
-    }
-
     @Test func contourEqualByID() {
         let contours = HeatMapContours.compute(from: tightCluster)
         guard let first = contours.contours.first else {
@@ -140,31 +119,6 @@ struct HeatMapContoursTests {
             coordinates: first.coordinates
         )
         #expect(first != different)
-    }
-
-    // MARK: - RenderMode
-
-    @Test func computePreservesRenderMode() {
-        let config = HeatMapConfiguration(renderMode: .isolines(lineWidth: 2))
-        let contours = HeatMapContours.compute(from: tightCluster, configuration: config)
-        #expect(contours.renderMode == .isolines(lineWidth: 2))
-    }
-
-    @Test func defaultRenderModeIsFilled() {
-        let contours = HeatMapContours.compute(from: tightCluster)
-        #expect(contours.renderMode == .filled)
-    }
-
-    @Test func contoursNotEqualWhenDifferentRenderMode() {
-        let a = HeatMapContours.compute(
-            from: tightCluster,
-            configuration: HeatMapConfiguration(renderMode: .filled)
-        )
-        let b = HeatMapContours.compute(
-            from: tightCluster,
-            configuration: HeatMapConfiguration(renderMode: .isolines())
-        )
-        #expect(a != b)
     }
 
     // MARK: - LevelSpacing

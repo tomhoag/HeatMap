@@ -4,7 +4,7 @@ Add heat maps to SwiftUI's `Map` view with just a few lines of code:
 
 ```swift
 Map {
-    HeatMapLayer(contours: contours)
+    HeatMapLayer(contours: contours, style: style)
 }
 .task {
     let config = HeatMapConfiguration.adaptive(for: points)
@@ -24,7 +24,7 @@ HeatMap is a native SwiftUI `MapContent` component — no image overlays, no UIK
 - **Works out of the box** — `HeatMapConfiguration.adaptive(for:)` inspects your data and picks a sensible radius and resolution automatically. Get a meaningful map before you've tuned anything.
 - **Async and cancellation-aware** — compute contours off the main thread with `async`/`await`. Switching configurations or navigating away cancels stale work automatically.
 - **Multiple render modes** — filled polygons, contour isolines, or both together. Four built-in color gradients plus a `HeatMapGradient(colors:)` API for your own.
-- **Fully configurable** — kernel radius, contour levels, grid resolution, level spacing (auto, linear, logarithmic, quantile, or custom thresholds), fill opacity, and polygon smoothing are all adjustable.
+- **Fully configurable** — kernel radius, contour levels, grid resolution, level spacing (auto, linear, logarithmic, quantile, or custom thresholds), and polygon smoothing are all adjustable. Visual styling (gradient, fill opacity, render mode) is separate from computation configuration, so changing the look doesn't trigger a recompute.
 - **Built-in legend** — `HeatMapLegend` renders the color scale with configurable orientation, label visibility, and custom endpoint text. Localization-ready out of the box.
 - **Hit testing** — query which contour levels contain a given coordinate, for tap-to-inspect interactions.
 - **Scales from city blocks to continents** — the same configuration API works whether your data spans a neighborhood or a country.
@@ -112,21 +112,28 @@ struct MyMapView: View {
 }
 ```
 
-### 3. Customize with `HeatMapConfiguration`
+### 3. Customize with `HeatMapConfiguration` and `HeatMapStyle`
 
-Control the appearance and computation through `HeatMapConfiguration`:
+Computation parameters live in `HeatMapConfiguration`; visual styling lives in `HeatMapStyle`. Changing a style property triggers an instant re-render without recomputing contours.
 
 ```swift
 let config = HeatMapConfiguration(
     radius: 1000,          // Gaussian kernel radius in meters
     contourLevels: 12,     // number of contour bands
     gridResolution: 120,   // grid cells along the longer axis
-    gradient: .cool,       // color gradient (.thermal, .warm, .cool, or custom)
     smoother: .chaikin(iterations: 2)  // polygon smoothing (default)
+)
+
+let style = HeatMapStyle(
+    gradient: .cool,       // color gradient (.thermal, .warm, .cool, or custom)
+    fillOpacity: 0.8,      // fill opacity (0–1)
+    renderMode: .filled    // .filled, .isolines, or .filledWithIsolines
 )
 
 contours = try? await HeatMapContours.compute(from: points, configuration: config)
 ```
+
+#### `HeatMapConfiguration` (computation)
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -134,11 +141,16 @@ contours = try? await HeatMapContours.compute(from: points, configuration: confi
 | `contourLevels` | `10` | Number of contour bands. More levels produce a finer gradient. |
 | `levelSpacing` | `.auto` | Threshold spacing strategy (`.auto`, `.linear`, `.logarithmic`, `.quantile`, or `.custom([Double])`). |
 | `gridResolution` | `100` | Grid cells along the longer axis. Higher values increase detail and computation time. |
-| `gradient` | `.thermal` | Color gradient for mapping density to color. |
 | `paddingFactor` | `1.5` | Bounding box padding as a multiple of `radius`. |
+| `smoother` | `.chaikin()` | Polygon smoother to reduce stair-step artifacts. |
+
+#### `HeatMapStyle` (rendering)
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `gradient` | `.thermal` | Color gradient for mapping density to color. |
 | `fillOpacity` | `1.0` | Fill opacity for contour polygons (`0`–`1`). |
 | `renderMode` | `.filled` | Contour rendering mode (`.filled`, `.isolines(lineWidth:color:)`, or `.filledWithIsolines(lineWidth:color:)`). |
-| `smoother` | `.chaikin()` | Polygon smoother to reduce stair-step artifacts. |
 
 ### 4. Adaptive Configuration
 
@@ -153,7 +165,7 @@ You can still override individual properties afterward:
 
 ```swift
 var config = HeatMapConfiguration.adaptive(for: points)
-config.gradient = .cool
+config.contourLevels = 15
 ```
 
 **Note:** The adaptive configuration is a snapshot of the current point set. If points change dynamically, you must call `adaptive(for:)` again, which may shift the radius or resolution and cause a visual discontinuity. For stable visuals with dynamic data, prefer setting configuration values explicitly.
@@ -231,29 +243,30 @@ You can switch to contour lines (isolines), or combine filled polygons with an i
 
 ```swift
 // Contour lines only, colored by gradient
-let config = HeatMapConfiguration(renderMode: .isolines(lineWidth: 2))
+let style = HeatMapStyle(renderMode: .isolines(lineWidth: 2))
 
 // Uniform black isolines
-let config = HeatMapConfiguration(renderMode: .isolines(lineWidth: 1, color: .black))
+let style = HeatMapStyle(renderMode: .isolines(lineWidth: 1, color: .black))
 
 // Filled polygons with white isoline overlay
-let config = HeatMapConfiguration(renderMode: .filledWithIsolines(color: .white))
+let style = HeatMapStyle(renderMode: .filledWithIsolines(color: .white))
 ```
 
 When `color` is `nil` (the default), each isoline is colored by the configured gradient at its contour level.
 
 ### 7. Recompute When Configuration Changes
 
-Use `.task(id:)` to recompute contours whenever the configuration changes:
+Use `.task(id:)` to recompute contours whenever the computation configuration changes. Style changes trigger a re-render automatically without recomputation:
 
 ```swift
 @State private var contours: HeatMapContours?
 @State private var config = HeatMapConfiguration()
+@State private var style = HeatMapStyle()
 
 var body: some View {
     Map {
         if let contours {
-            HeatMapLayer(contours: contours)
+            HeatMapLayer(contours: contours, style: style)
         }
     }
     .task(id: config) {
@@ -261,6 +274,8 @@ var body: some View {
     }
 }
 ```
+
+Because `HeatMapStyle` properties (gradient, fill opacity, render mode) are not part of `HeatMapConfiguration`, changing them does not trigger `.task(id: config)`. SwiftUI re-evaluates the `body` and `HeatMapLayer` renders with the new style instantly.
 
 #### Cancellation
 
@@ -294,11 +309,11 @@ Display a legend showing the color scale alongside the map:
 ```swift
 Map {
     if let contours {
-        HeatMapLayer(contours: contours)
+        HeatMapLayer(contours: contours, style: style)
     }
 }
 .overlay(alignment: .bottomLeading) {
-    HeatMapLegend(gradient: config.gradient, levelCount: config.contourLevels)
+    HeatMapLegend(gradient: style.gradient, levelCount: config.contourLevels)
         .padding()
 }
 ```
@@ -347,7 +362,7 @@ For `.filled` and `.filledWithIsolines` modes the legend is always appropriate b
 ```swift
 // Hide the legend when isolines use a uniform color
 var showLegend: Bool {
-    switch config.renderMode {
+    switch style.renderMode {
     case .isolines(_, let color):
         return color == nil   // gradient-colored → show; uniform color → hide
     case .filled, .filledWithIsolines:

@@ -56,15 +56,23 @@ struct ContentView: View {
         }
     }
 
+    /// Computation config — triggers recompute when changed.
     private var configuration: HeatMapConfiguration {
         HeatMapConfiguration(
             radius: radius,
             contourLevels: Int(contourLevels),
-            levelSpacing: selectedSpacing.spacing, gridResolution: 120,
+            levelSpacing: selectedSpacing.spacing,
+            gridResolution: 120,
+            smoother: selectedSmoother.smoother
+        )
+    }
+
+    /// Render style — triggers re-render only, no recompute.
+    private var style: HeatMapStyle {
+        HeatMapStyle(
             gradient: selectedGradient.gradient,
             fillOpacity: fillOpacity,
-            renderMode: selectedRenderMode.renderMode(lineWidth: CGFloat(isolineWidth), color: selectedIsolineColor.color),
-            smoother: selectedSmoother.smoother
+            renderMode: selectedRenderMode.renderMode(lineWidth: CGFloat(isolineWidth), color: selectedIsolineColor.color)
         )
     }
 
@@ -72,7 +80,7 @@ struct ContentView: View {
         MapReader { proxy in
             Map(position: $position) {
                 if let contours {
-                    HeatMapLayer(contours: contours)
+                    HeatMapLayer(contours: contours, style: style)
                 }
             }
             .onTapGesture { screenPoint in
@@ -139,7 +147,7 @@ struct ContentView: View {
             }
             .overlay(alignment: .topTrailing) {
                 if let contours, showLegend {
-                    HeatMapLegend(contours: contours)
+                    HeatMapLegend(contours: contours, style: style)
                         .axis(legendAxis)
                         .labels(resolvedLegendLabels)
                         .padding(12)

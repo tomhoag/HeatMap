@@ -71,12 +71,9 @@ struct HeatMapLegendTests {
     @Test func legendFromContoursCreatesView() {
         let contours = HeatMapContours.compute(
             from: tightCluster,
-            configuration: HeatMapConfiguration(
-                contourLevels: 8,
-                gradient: .cool
-            )
+            configuration: HeatMapConfiguration(contourLevels: 8)
         )
-        let legend = HeatMapLegend(contours: contours)
+        let legend = HeatMapLegend(contours: contours, style: HeatMapStyle(gradient: .cool))
         _ = legend.body
     }
 

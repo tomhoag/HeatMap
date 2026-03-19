@@ -12,7 +12,6 @@ struct HeatMapConfigurationAdaptiveTests {
         #expect(config.radius == defaults.radius)
         #expect(config.gridResolution == defaults.gridResolution)
         #expect(config.contourLevels == defaults.contourLevels)
-        #expect(config.gradient == defaults.gradient)
     }
 
     @Test func adaptiveFromSinglePointReturnsDefault() {
@@ -63,6 +62,5 @@ struct HeatMapConfigurationAdaptiveTests {
         #expect(config.contourLevels >= 1)
         #expect(config.gridResolution >= 2)
         #expect(config.paddingFactor >= 0)
-        #expect(config.gradient == .thermal)
     }
 }

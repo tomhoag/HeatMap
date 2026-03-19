@@ -6,7 +6,6 @@
 //
 
 import CoreLocation
-import SwiftUI
 
 /// Pre-computed contour data for use with ``HeatMapLayer``.
 ///
@@ -18,7 +17,7 @@ import SwiftUI
 ///
 /// Map {
 ///     if let contours {
-///         HeatMapLayer(contours: contours)
+///         HeatMapLayer(contours: contours, style: style)
 ///     }
 /// }
 /// .task {
@@ -52,9 +51,7 @@ import SwiftUI
 /// - ``contours``
 /// - ``contourCount``
 /// - ``levelCount``
-/// - ``gradient``
-/// - ``fillOpacity``
-/// - ``renderMode``
+/// - ``thresholds``
 ///
 /// ### Hit Testing
 ///
@@ -64,14 +61,10 @@ import SwiftUI
 ///
 /// - ``HeatMapPolygon``
 public struct HeatMapContours: Sendable, Equatable {
-    /// Two contour results are equal when they have the same level count,
-    /// gradient, fill opacity, render mode, and polygon identities
-    /// (in order).
+    /// Two contour results are equal when they have the same level count
+    /// and polygon identities (in order).
     public static func == (lhs: HeatMapContours, rhs: HeatMapContours) -> Bool {
         lhs.levels == rhs.levels
-            && lhs.configuration.gradient == rhs.configuration.gradient
-            && lhs.configuration.fillOpacity == rhs.configuration.fillOpacity
-            && lhs.configuration.renderMode == rhs.configuration.renderMode
             && lhs.polygons.count == rhs.polygons.count
             && zip(lhs.polygons, rhs.polygons).allSatisfy { $0.id == $1.id }
     }
@@ -82,8 +75,8 @@ public struct HeatMapContours: Sendable, Equatable {
     /// The number of contour levels used during extraction.
     let levels: Int
 
-    /// The configuration used during computation.
-    let configuration: HeatMapConfiguration
+    /// The density threshold values used during contour extraction.
+    let thresholdValues: [Double]
 
     /// The contour polygons as ``HeatMapPolygon`` values.
     ///
@@ -109,29 +102,11 @@ public struct HeatMapContours: Sendable, Equatable {
     /// that was used to compute these contours.
     public var levelCount: Int { levels }
 
-    /// The color gradient associated with these contours.
+    /// The density threshold values used during contour extraction.
     ///
-    /// This is the ``HeatMapGradient`` that was specified in the
-    /// ``HeatMapConfiguration`` used during computation. It is also
-    /// used by ``HeatMapLayer/init(contours:)`` to color the rendered
-    /// polygons.
-    public var gradient: HeatMapGradient { configuration.gradient }
-
-    /// The fill opacity associated with these contours.
-    ///
-    /// This is the ``HeatMapConfiguration/fillOpacity`` value that was
-    /// specified in the configuration used during computation. It is used
-    /// by ``HeatMapLayer/init(contours:)`` to set the opacity of rendered
-    /// polygons.
-    public var fillOpacity: Double { configuration.fillOpacity }
-
-    /// The render mode associated with these contours.
-    ///
-    /// This is the ``HeatMapConfiguration/renderMode`` value that was
-    /// specified in the configuration used during computation. It is used
-    /// by ``HeatMapLayer/init(contours:)`` to determine how contours
-    /// are rendered (filled polygons, isolines, or both).
-    public var renderMode: HeatMapRenderMode { configuration.renderMode }
+    /// Each value corresponds to the boundary between two contour levels.
+    /// The array is sorted ascending and has ``levelCount`` elements.
+    public var thresholds: [Double] { thresholdValues }
 
     /// Synchronously computes contours from the given points and configuration.
     ///
@@ -146,10 +121,9 @@ public struct HeatMapContours: Sendable, Equatable {
     ///
     /// - Parameters:
     ///   - points: The weighted geographic data points.
-    ///   - configuration: The rendering configuration. Defaults to
-    ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:smoother:)``.
+    ///   - configuration: The computation configuration.
     /// - Returns: A ``HeatMapContours`` value ready to pass to
-    ///   ``HeatMapLayer/init(contours:)``.
+    ///   ``HeatMapLayer/init(contours:style:)``.
     public static func compute<P: HeatMapable>(
         from points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
@@ -178,10 +152,9 @@ public struct HeatMapContours: Sendable, Equatable {
     ///
     /// - Parameters:
     ///   - points: The weighted geographic data points.
-    ///   - configuration: The rendering configuration. Defaults to
-    ///     ``HeatMapConfiguration/init(radius:contourLevels:gridResolution:gradient:paddingFactor:smoother:)``.
+    ///   - configuration: The computation configuration.
     /// - Returns: A ``HeatMapContours`` value ready to pass to
-    ///   ``HeatMapLayer/init(contours:)``.
+    ///   ``HeatMapLayer/init(contours:style:)``.
     /// - Throws: `CancellationError` if the Task is cancelled during computation.
     public static func compute<P: HeatMapable>(
         from points: [P],
@@ -239,7 +212,7 @@ public struct HeatMapContours: Sendable, Equatable {
         return HeatMapContours(
             polygons: annular,
             levels: thresholds.count,
-            configuration: configuration
+            thresholdValues: thresholds
         )
     }
 }

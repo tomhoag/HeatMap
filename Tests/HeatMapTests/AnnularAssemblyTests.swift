@@ -27,22 +27,22 @@ struct AnnularAssemblyTests {
 
     // MARK: - Basic Cases
 
-    @Test func emptyInputReturnsEmpty() {
-        let result = AnnularAssembly.assembleAnnular([])
+    @Test func emptyInputReturnsEmpty() throws {
+        let result = try AnnularAssembly.assembleAnnular([])
         #expect(result.isEmpty)
     }
 
-    @Test func singleLevelHasNoHoles() {
+    @Test func singleLevelHasNoHoles() throws {
         let polygon = makeSquare(center: (1, 1), size: 2, level: 0, threshold: 1.0)
-        let result = AnnularAssembly.assembleAnnular([polygon])
+        let result = try AnnularAssembly.assembleAnnular([polygon])
         #expect(result.count == 1)
         #expect(result[0].interiorPolygons.isEmpty)
     }
 
-    @Test func twoNestedLevelsCreatesHole() {
+    @Test func twoNestedLevelsCreatesHole() throws {
         let outer = makeSquare(center: (1, 1), size: 4, level: 0, threshold: 1.0)
         let inner = makeSquare(center: (1, 1), size: 2, level: 1, threshold: 2.0)
-        let result = AnnularAssembly.assembleAnnular([outer, inner])
+        let result = try AnnularAssembly.assembleAnnular([outer, inner])
 
         #expect(result.count == 2)
 
@@ -53,11 +53,11 @@ struct AnnularAssemblyTests {
         #expect(level1.interiorPolygons.isEmpty)
     }
 
-    @Test func threeLevelNesting() {
+    @Test func threeLevelNesting() throws {
         let l0 = makeSquare(center: (5, 5), size: 6, level: 0, threshold: 1.0)
         let l1 = makeSquare(center: (5, 5), size: 4, level: 1, threshold: 2.0)
         let l2 = makeSquare(center: (5, 5), size: 2, level: 2, threshold: 3.0)
-        let result = AnnularAssembly.assembleAnnular([l0, l1, l2])
+        let result = try AnnularAssembly.assembleAnnular([l0, l1, l2])
 
         let r0 = result.first { $0.level == 0 }!
         let r1 = result.first { $0.level == 1 }!
@@ -70,13 +70,13 @@ struct AnnularAssemblyTests {
 
     // MARK: - Disconnected Regions
 
-    @Test func disconnectedRegionsGetCorrectHoles() {
+    @Test func disconnectedRegionsGetCorrectHoles() throws {
         let outerA = makeSquare(center: (0, 0), size: 4, level: 0, threshold: 1.0)
         let outerB = makeSquare(center: (10, 10), size: 4, level: 0, threshold: 1.0)
         let innerA = makeSquare(center: (0, 0), size: 2, level: 1, threshold: 2.0)
         let innerB = makeSquare(center: (10, 10), size: 2, level: 1, threshold: 2.0)
 
-        let result = AnnularAssembly.assembleAnnular([outerA, outerB, innerA, innerB])
+        let result = try AnnularAssembly.assembleAnnular([outerA, outerB, innerA, innerB])
 
         let level0s = result.filter { $0.level == 0 }
         #expect(level0s.count == 2)
@@ -93,19 +93,19 @@ struct AnnularAssemblyTests {
 
     // MARK: - Identity Preservation
 
-    @Test func preservesPolygonIdentity() {
+    @Test func preservesPolygonIdentity() throws {
         let outer = makeSquare(center: (1, 1), size: 4, level: 0, threshold: 1.0)
         let inner = makeSquare(center: (1, 1), size: 2, level: 1, threshold: 2.0)
-        let result = AnnularAssembly.assembleAnnular([outer, inner])
+        let result = try AnnularAssembly.assembleAnnular([outer, inner])
 
         #expect(result.first { $0.level == 0 }?.id == outer.id)
         #expect(result.first { $0.level == 1 }?.id == inner.id)
     }
 
-    @Test func preservesCoordinates() {
+    @Test func preservesCoordinates() throws {
         let outer = makeSquare(center: (1, 1), size: 4, level: 0, threshold: 1.0)
         let inner = makeSquare(center: (1, 1), size: 2, level: 1, threshold: 2.0)
-        let result = AnnularAssembly.assembleAnnular([outer, inner])
+        let result = try AnnularAssembly.assembleAnnular([outer, inner])
 
         let r0 = result.first { $0.level == 0 }!
         #expect(r0.coordinates.count == outer.coordinates.count)

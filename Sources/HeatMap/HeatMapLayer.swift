@@ -12,24 +12,21 @@ import SwiftUI
 ///
 /// Pre-compute contours using
 /// ``HeatMapContours/compute(from:configuration:)-swift.type.method``
-/// and pass the result to ``init(contours:)``:
+/// and pass the result along with a ``HeatMapStyle``:
 ///
 /// ```swift
 /// @State private var contours: HeatMapContours?
+/// let style = HeatMapStyle(gradient: .thermal)
 ///
 /// Map {
 ///     if let contours {
-///         HeatMapLayer(contours: contours)
+///         HeatMapLayer(contours: contours, style: style)
 ///     }
 /// }
 /// .task {
 ///     contours = try? await HeatMapContours.compute(
 ///         from: myPoints,
-///         configuration: HeatMapConfiguration(
-///             radius: 300,
-///             contourLevels: 12,
-///             gradient: .thermal
-///         )
+///         configuration: HeatMapConfiguration(radius: 300, contourLevels: 12)
 ///     )
 /// }
 /// ```
@@ -38,6 +35,7 @@ import SwiftUI
 ///
 /// ### Creating a Layer
 ///
+/// - ``init(contours:style:)``
 /// - ``init(contours:)``
 ///
 /// ### Pre-computing Contours
@@ -59,18 +57,31 @@ public struct HeatMapLayer: MapContent {
     /// The render mode controlling how contours are visualized.
     private let renderMode: HeatMapRenderMode
 
-    /// Creates a heat map layer from pre-computed contours.
+    /// Creates a heat map layer from pre-computed contours and a style.
     ///
     /// Use ``HeatMapContours/compute(from:configuration:)-swift.type.method``
-    /// to compute contours asynchronously, then pass the result here.
+    /// to compute contours asynchronously, then pass the result here with
+    /// a ``HeatMapStyle`` controlling the visual appearance.
+    ///
+    /// - Parameters:
+    ///   - contours: Pre-computed contour data.
+    ///   - style: The visual styling (gradient, opacity, render mode).
+    public init(contours: HeatMapContours, style: HeatMapStyle) {
+        self.contours = contours.polygons
+        self.gradient = style.gradient
+        self.totalLevels = contours.levels
+        self.fillOpacity = style.fillOpacity
+        self.renderMode = style.renderMode
+    }
+
+    /// Creates a heat map layer from pre-computed contours using default
+    /// styling.
+    ///
+    /// Equivalent to `init(contours: contours, style: HeatMapStyle())`.
     ///
     /// - Parameter contours: Pre-computed contour data.
     public init(contours: HeatMapContours) {
-        self.contours = contours.polygons
-        self.gradient = contours.gradient
-        self.totalLevels = contours.levels
-        self.fillOpacity = contours.fillOpacity
-        self.renderMode = contours.renderMode
+        self.init(contours: contours, style: HeatMapStyle())
     }
 
     @MainActor

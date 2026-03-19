@@ -10,23 +10,22 @@ import SwiftUI
 /// A gradient legend that displays the color scale used by a ``HeatMapLayer``.
 ///
 /// Place the legend alongside your map to help users interpret the heat map
-/// colors. There are two ways to create a legend:
+/// colors. There are several ways to create a legend:
 ///
 /// **From a gradient and level count** — shows "Low" and "High" labels:
 ///
 /// ```swift
-/// Map {
-///     if let contours {
-///         HeatMapLayer(contours: contours)
-///     }
-/// }
-/// .overlay(alignment: .bottomLeading) {
-///     HeatMapLegend(gradient: config.gradient, levelCount: config.contourLevels)
-///         .padding()
-/// }
+/// HeatMapLegend(gradient: style.gradient, levelCount: config.contourLevels)
 /// ```
 ///
-/// **From pre-computed contours** — shows density threshold labels by default:
+/// **From pre-computed contours and a style** — shows density threshold labels
+/// by default:
+///
+/// ```swift
+/// HeatMapLegend(contours: computedContours, style: style)
+/// ```
+///
+/// **From pre-computed contours with default styling:**
 ///
 /// ```swift
 /// HeatMapLegend(contours: computedContours)
@@ -65,6 +64,7 @@ import SwiftUI
 /// ### Creating a Legend
 ///
 /// - ``init(gradient:levelCount:)``
+/// - ``init(contours:style:)``
 /// - ``init(contours:)``
 ///
 /// ### Configuring Appearance
@@ -118,23 +118,29 @@ public struct HeatMapLegend: View {
         self.thresholds = nil
     }
 
-    /// Creates a legend from pre-computed contours.
+    /// Creates a legend from pre-computed contours and a style.
     ///
-    /// The gradient and level count are extracted from the contours. Density
-    /// threshold values are shown by default (``LabelVisibility/thresholds``).
+    /// The gradient is taken from the style and the level count from the
+    /// contours. Density threshold values are shown by default
+    /// (``LabelVisibility/thresholds``).
     ///
-    /// - Parameter contours: Pre-computed contour data from
-    ///   ``HeatMapContours/compute(from:configuration:)-swift.type.method``.
-    public init(contours: HeatMapContours) {
-        self.gradient = contours.gradient
+    /// - Parameters:
+    ///   - contours: Pre-computed contour data.
+    ///   - style: The visual styling providing the gradient.
+    public init(contours: HeatMapContours, style: HeatMapStyle) {
+        self.gradient = style.gradient
         self.levelCount = contours.levelCount
-        // Extract unique thresholds sorted by level
-        let polygons: [HeatMapPolygon] = contours.contours
-        let grouped = Dictionary(grouping: polygons, by: { $0.level })
-        let uniqueThresholds = grouped
-            .sorted { $0.key < $1.key }
-            .compactMap { $0.value.first?.threshold }
-        self.thresholds = uniqueThresholds.isEmpty ? nil : uniqueThresholds
+        let thresholdValues = contours.thresholds
+        self.thresholds = thresholdValues.isEmpty ? nil : thresholdValues
+    }
+
+    /// Creates a legend from pre-computed contours using default styling.
+    ///
+    /// Equivalent to `init(contours: contours, style: HeatMapStyle())`.
+    ///
+    /// - Parameter contours: Pre-computed contour data.
+    public init(contours: HeatMapContours) {
+        self.init(contours: contours, style: HeatMapStyle())
     }
 
     /// Sets the axis along which the gradient bar is drawn.

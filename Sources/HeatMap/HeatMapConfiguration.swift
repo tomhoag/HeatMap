@@ -7,7 +7,11 @@
 
 import Foundation
 
-/// Configuration parameters for heat map computation and rendering.
+/// Configuration parameters for heat map density computation.
+///
+/// `HeatMapConfiguration` controls the density grid and contour extraction
+/// pipeline. Visual rendering properties (gradient, fill opacity, render
+/// mode) live in ``HeatMapStyle``.
 ///
 /// All properties have sensible defaults, so you can create a configuration
 /// with no arguments for a quick start:
@@ -22,7 +26,6 @@ import Foundation
 /// let config = HeatMapConfiguration(
 ///     radius: 1000,
 ///     contourLevels: 15,
-///     gradient: .cool,
 ///     smoother: .chaikin(iterations: 3)
 /// )
 /// let contours = try await HeatMapContours.compute(from: myPoints, configuration: config)
@@ -41,12 +44,6 @@ import Foundation
 /// - ``levelSpacing``
 /// - ``gridResolution``
 /// - ``smoother``
-///
-/// ### Appearance
-///
-/// - ``gradient``
-/// - ``fillOpacity``
-/// - ``renderMode``
 ///
 /// ### Adaptive Configuration
 ///
@@ -89,32 +86,12 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// maintain a square cell aspect ratio. The default is `100`.
     public var gridResolution: Int
 
-    /// The color gradient used to render contour levels.
-    ///
-    /// The default is ``HeatMapGradient/thermal``.
-    public var gradient: HeatMapGradient
-
     /// Padding factor applied to the bounding box, as a multiple of ``radius``.
     ///
     /// The bounding box extends by `radius × paddingFactor` beyond the
     /// outermost data points to ensure the Gaussian kernel tails are fully
     /// captured. The default is `1.5`.
     public var paddingFactor: Double
-
-    /// The opacity applied to contour fills and isolines.
-    ///
-    /// Controls how transparent the heat map is when rendered on the map.
-    /// A value of `1.0` is fully opaque, `0.0` is fully transparent.
-    /// The default is `1.0`.
-    public var fillOpacity: Double
-
-    /// The rendering mode for contour visualization.
-    ///
-    /// Controls whether contours are drawn as filled polygons, contour
-    /// lines (isolines), or both. The default is
-    /// ``HeatMapRenderMode/filled``, which preserves the standard
-    /// filled-polygon behavior.
-    public var renderMode: HeatMapRenderMode
 
     /// The polygon smoother applied to extracted contour polygons.
     ///
@@ -126,8 +103,8 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     /// Creates a heat map configuration.
     ///
     /// Invalid values are clamped to their minimum: `radius` to `1`,
-    /// `contourLevels` to `1`, `gridResolution` to `2`,
-    /// `paddingFactor` to `0`, and `fillOpacity` to `0...1`.
+    /// `contourLevels` to `1`, `gridResolution` to `2`, and
+    /// `paddingFactor` to `0`.
     ///
     /// - Parameters:
     ///   - radius: The Gaussian kernel radius in meters. Minimum: `1`.
@@ -139,13 +116,8 @@ public struct HeatMapConfiguration: Sendable, Hashable {
     ///     ``LevelSpacing/auto``.
     ///   - gridResolution: Grid cells along the longer axis. Minimum: `2`.
     ///     Default: `100`.
-    ///   - gradient: The color gradient. Default: ``HeatMapGradient/thermal``.
     ///   - paddingFactor: Bounding box padding as a radius multiple.
     ///     Minimum: `0`. Default: `1.5`.
-    ///   - fillOpacity: The fill opacity for contour polygons. Clamped to
-    ///     `0...1`. Default: `1.0`.
-    ///   - renderMode: The contour rendering mode. Default:
-    ///     ``HeatMapRenderMode/filled``.
     ///   - smoother: The polygon smoother. Default:
     ///     ``PolygonSmoother/chaikin(iterations:)`` with 2 iterations.
     public init(
@@ -153,10 +125,7 @@ public struct HeatMapConfiguration: Sendable, Hashable {
         contourLevels: Int = 10,
         levelSpacing: LevelSpacing = .auto,
         gridResolution: Int = 100,
-        gradient: HeatMapGradient = .thermal,
         paddingFactor: Double = 1.5,
-        fillOpacity: Double = 1.0,
-        renderMode: HeatMapRenderMode = .filled,
         smoother: PolygonSmoother = .chaikin()
     ) {
         self.radius = max(radius, 1)
@@ -166,16 +135,13 @@ public struct HeatMapConfiguration: Sendable, Hashable {
             self.contourLevels = thresholds.count
         }
         self.gridResolution = max(gridResolution, 2)
-        self.gradient = gradient
         self.paddingFactor = max(paddingFactor, 0)
-        self.fillOpacity = min(max(fillOpacity, 0), 1)
-        self.renderMode = renderMode
         self.smoother = smoother
     }
 }
 
 extension HeatMapConfiguration: CustomStringConvertible {
     public var description: String {
-        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), spacing: \(levelSpacing), grid: \(gridResolution), gradient: \(gradient), padding: \(paddingFactor)×, fillOpacity: \(fillOpacity), renderMode: \(renderMode), smoother: \(smoother))"
+        "HeatMapConfiguration(radius: \(radius)m, levels: \(contourLevels), spacing: \(levelSpacing), grid: \(gridResolution), padding: \(paddingFactor)×, smoother: \(smoother))"
     }
 }
