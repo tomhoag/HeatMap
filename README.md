@@ -1,4 +1,4 @@
-# HeatMap
+# SwiftUI HeatMap
 
 Add heat maps to SwiftUI's `Map` view with just a few lines of code:
 
