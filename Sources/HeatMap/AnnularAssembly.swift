@@ -50,7 +50,9 @@ enum AnnularAssembly {
         for (levelIndex, level) in sortedLevels.enumerated() {
             try Task.checkCancellation()
 
-            let outerPolygons = grouped[level]!
+            guard let outerPolygons = grouped[level] else {
+                continue
+            }
 
             guard levelIndex < sortedLevels.count - 1 else {
                 result.append(contentsOf: outerPolygons)
@@ -58,7 +60,7 @@ enum AnnularAssembly {
             }
 
             let nextLevel = sortedLevels[levelIndex + 1]
-            let innerCandidates = grouped[nextLevel]!.map(IndexedPolygon.init)
+            let innerCandidates = grouped[nextLevel, default: []].map(IndexedPolygon.init)
 
             for outer in outerPolygons {
                 try Task.checkCancellation()
