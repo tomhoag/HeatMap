@@ -20,8 +20,8 @@ import Foundation
 /// Saddle cases (where diagonally opposite corners are above the threshold)
 /// are disambiguated using the cell center value.
 ///
-/// Row processing is parallelized using `DispatchQueue.concurrentPerform`
-/// for performance on large grids.
+/// The async extraction path parallelizes row processing with bounded Swift
+/// concurrency for performance on large grids.
 ///
 /// ## Topics
 ///
@@ -29,6 +29,13 @@ import Foundation
 ///
 /// - ``extractContours(from:thresholds:)``
 enum MarchingSquares {
+    /// Upper bound for async row-chunk workers.
+    ///
+    /// Heat map generation is background CPU work in host apps that may also
+    /// be rendering MapKit overlays, parsing incoming data, or reconnecting
+    /// network streams. Keep this conservative and reserve at least one core
+    /// for the rest of the app.
+    private static let maximumConcurrentSegmentWorkers = 4
 
     // MARK: - Public
 
@@ -71,10 +78,62 @@ enum MarchingSquares {
         for (level, threshold) in thresholds.enumerated() {
             try Task.checkCancellation()
 
-            let segments = generateSegments(grid: grid, threshold: threshold)
+            let segments = try generateSegments(grid: grid, threshold: threshold)
             let rings = assembleRings(from: segments)
 
             for ring in rings {
+                let coordinates = ring.map { grid.coordinate(row: $0.row, col: $0.col) }
+                guard coordinates.count >= 3 else { continue }
+                allPolygons.append(
+                    HeatMapPolygon(
+                        level: level,
+                        threshold: threshold,
+                        coordinates: coordinates
+                    )
+                )
+            }
+        }
+
+        return allPolygons
+    }
+
+    /// Asynchronously extracts contour polygons from the density grid at the
+    /// given thresholds.
+    ///
+    /// This variant parallelizes segment generation with a bounded number of
+    /// child tasks so CPU work remains tied to Swift task cancellation and does
+    /// not fan out across every available core.
+    ///
+    /// - Parameters:
+    ///   - grid: The density grid to extract contours from.
+    ///   - thresholds: The density threshold values, sorted ascending.
+    /// - Returns: All extracted polygons, sorted from lowest level
+    ///   (outermost) to highest (innermost).
+    /// - Throws: `CancellationError` if the current task is cancelled.
+    static func extractContours(
+        from grid: DensityGrid,
+        thresholds: [Double]
+    ) async throws -> [HeatMapPolygon] {
+        guard grid.rows > 1, grid.columns > 1, !thresholds.isEmpty else {
+            return []
+        }
+
+        let range = grid.maxDensity - grid.minDensity
+        guard range > 0 else {
+            return []
+        }
+
+        var allPolygons: [HeatMapPolygon] = []
+
+        for (level, threshold) in thresholds.enumerated() {
+            try Task.checkCancellation()
+
+            let segments = try await generateSegments(grid: grid, threshold: threshold)
+            let rings = assembleRings(from: segments)
+
+            for ring in rings {
+                try Task.checkCancellation()
+
                 let coordinates = ring.map { grid.coordinate(row: $0.row, col: $0.col) }
                 guard coordinates.count >= 3 else { continue }
                 allPolygons.append(
@@ -152,9 +211,7 @@ enum MarchingSquares {
 
     /// Generates all directed edge segments for a given threshold.
     ///
-    /// Rows are processed in parallel using `DispatchQueue.concurrentPerform`.
-    /// Each row writes to its own slot in a pre-allocated `Array`, so no
-    /// synchronization is needed.
+    /// Rows are processed serially for the synchronous extraction path.
     ///
     /// - Parameters:
     ///   - grid: The density grid.
@@ -163,67 +220,141 @@ enum MarchingSquares {
     private static func generateSegments(
         grid: DensityGrid,
         threshold: Double
-    ) -> [Segment] {
+    ) throws -> [Segment] {
         let rowCount = grid.rows - 1
         guard rowCount > 0 else { return [] }
 
-        // Pre-allocate one slot per row. Each concurrent iteration writes
-        // only to its own index, so no synchronization is needed.
-        var rowSegments = Array(repeating: [Segment](), count: rowCount)
+        return try generateSegments(
+            grid: grid,
+            threshold: threshold,
+            inRows: 0..<rowCount
+        )
+    }
 
-        rowSegments.withUnsafeMutableBufferPointer { buffer in
-            // Safe: each concurrent iteration writes to a distinct index.
-            nonisolated(unsafe) let baseAddress = buffer.baseAddress!
-            DispatchQueue.concurrentPerform(iterations: rowCount) { row in
-                var localSegments: [Segment] = []
+    /// Generates all directed edge segments for a given threshold using
+    /// bounded Swift concurrency.
+    private static func generateSegments(
+        grid: DensityGrid,
+        threshold: Double
+    ) async throws -> [Segment] {
+        let rowCount = grid.rows - 1
+        guard rowCount > 0 else { return [] }
 
-                for col in 0..<(grid.columns - 1) {
-                    let tl = grid.value(row: row, col: col)
-                    let tr = grid.value(row: row, col: col + 1)
-                    let br = grid.value(row: row + 1, col: col + 1)
-                    let bl = grid.value(row: row + 1, col: col)
-
-                    var caseIndex = 0
-                    if tl >= threshold { caseIndex |= 8 }
-                    if tr >= threshold { caseIndex |= 4 }
-                    if br >= threshold { caseIndex |= 2 }
-                    if bl >= threshold { caseIndex |= 1 }
-
-                    // Skip cases with no edges
-                    guard caseIndex != 0, caseIndex != 15 else { continue }
-
-                    // Disambiguate saddle cases
-                    let edges: [(Int, Int)]
-                    if caseIndex == 5 {
-                        let center = (tl + tr + br + bl) / 4.0
-                        edges = center >= threshold ? saddleCase5Alt : edgeTable[5]
-                    } else if caseIndex == 10 {
-                        let center = (tl + tr + br + bl) / 4.0
-                        edges = center >= threshold ? saddleCase10Alt : edgeTable[10]
-                    } else {
-                        edges = edgeTable[caseIndex]
-                    }
-
-                    let corners = (tl: tl, tr: tr, br: br, bl: bl)
-
-                    for (edgeA, edgeB) in edges {
-                        let start = interpolateEdge(
-                            edge: edgeA, row: row, col: col,
-                            corners: corners, threshold: threshold
-                        )
-                        let end = interpolateEdge(
-                            edge: edgeB, row: row, col: col,
-                            corners: corners, threshold: threshold
-                        )
-                        localSegments.append(Segment(start: start, end: end))
-                    }
+        let ranges = rowRanges(rowCount: rowCount)
+        return try await withThrowingTaskGroup(of: RowSegments.self) { group in
+            for range in ranges {
+                group.addTask {
+                    let segments = try self.generateSegments(
+                        grid: grid,
+                        threshold: threshold,
+                        inRows: range
+                    )
+                    return RowSegments(startRow: range.lowerBound, segments: segments)
                 }
+            }
 
-                baseAddress.advanced(by: row).pointee = localSegments
+            var chunks: [RowSegments] = []
+            chunks.reserveCapacity(ranges.count)
+
+            for try await chunk in group {
+                chunks.append(chunk)
+            }
+
+            chunks.sort { $0.startRow < $1.startRow }
+            return chunks.flatMap(\.segments)
+        }
+    }
+
+    private struct RowSegments: Sendable {
+        let startRow: Int
+        let segments: [Segment]
+    }
+
+    private static func rowRanges(rowCount: Int) -> [Range<Int>] {
+        let workerCount = workerCount(forRows: rowCount)
+        guard workerCount > 1 else { return [0..<rowCount] }
+
+        let chunkSize = Int(ceil(Double(rowCount) / Double(workerCount)))
+        return stride(from: 0, to: rowCount, by: chunkSize).map { start in
+            start..<min(start + chunkSize, rowCount)
+        }
+    }
+
+    private static func workerCount(forRows rowCount: Int) -> Int {
+        let activeCores = ProcessInfo.processInfo.activeProcessorCount
+        let maxWorkers = max(1, min(activeCores - 1, maximumConcurrentSegmentWorkers))
+        return min(rowCount, maxWorkers)
+    }
+
+    private static func generateSegments(
+        grid: DensityGrid,
+        threshold: Double,
+        inRows rows: Range<Int>
+    ) throws -> [Segment] {
+        var result: [Segment] = []
+
+        for row in rows {
+            try Task.checkCancellation()
+            result.append(contentsOf: segmentsForRow(
+                row,
+                grid: grid,
+                threshold: threshold
+            ))
+        }
+
+        return result
+    }
+
+    private static func segmentsForRow(
+        _ row: Int,
+        grid: DensityGrid,
+        threshold: Double
+    ) -> [Segment] {
+        var localSegments: [Segment] = []
+
+        for col in 0..<(grid.columns - 1) {
+            let tl = grid.value(row: row, col: col)
+            let tr = grid.value(row: row, col: col + 1)
+            let br = grid.value(row: row + 1, col: col + 1)
+            let bl = grid.value(row: row + 1, col: col)
+
+            var caseIndex = 0
+            if tl >= threshold { caseIndex |= 8 }
+            if tr >= threshold { caseIndex |= 4 }
+            if br >= threshold { caseIndex |= 2 }
+            if bl >= threshold { caseIndex |= 1 }
+
+            // Skip cases with no edges
+            guard caseIndex != 0, caseIndex != 15 else { continue }
+
+            // Disambiguate saddle cases
+            let edges: [(Int, Int)]
+            if caseIndex == 5 {
+                let center = (tl + tr + br + bl) / 4.0
+                edges = center >= threshold ? saddleCase5Alt : edgeTable[5]
+            } else if caseIndex == 10 {
+                let center = (tl + tr + br + bl) / 4.0
+                edges = center >= threshold ? saddleCase10Alt : edgeTable[10]
+            } else {
+                edges = edgeTable[caseIndex]
+            }
+
+            let corners = (tl: tl, tr: tr, br: br, bl: bl)
+
+            for (edgeA, edgeB) in edges {
+                let start = interpolateEdge(
+                    edge: edgeA, row: row, col: col,
+                    corners: corners, threshold: threshold
+                )
+                let end = interpolateEdge(
+                    edge: edgeB, row: row, col: col,
+                    corners: corners, threshold: threshold
+                )
+                localSegments.append(Segment(start: start, end: end))
             }
         }
 
-        return rowSegments.flatMap { $0 }
+        return localSegments
     }
 
     /// Computes the interpolated point on a cell edge where the density

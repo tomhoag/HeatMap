@@ -151,11 +151,12 @@ struct DensityGrid: Sendable {
 
         var grid = [Double](repeating: 0, count: rows * columns)
 
-        // Check cancellation every N points to balance responsiveness with overhead
-        let checkInterval = max(1, points.count / 100)
+        // Check cancellation periodically to balance responsiveness with overhead.
+        let pointCheckInterval = max(1, points.count / 100)
+        let rowCheckInterval = 8 // how often to check cancellation in the row hot path
 
         for (index, point) in points.enumerated() {
-            if index % checkInterval == 0 {
+            if index % pointCheckInterval == 0 {
                 try Task.checkCancellation()
             }
 
@@ -169,6 +170,10 @@ struct DensityGrid: Sendable {
             let colEnd = min(columns - 1, Int((pointLon + kernelRadiusLon - minLon) / lonStep))
 
             for row in rowStart...rowEnd {
+                if (row - rowStart) % rowCheckInterval == 0 {
+                    try Task.checkCancellation()
+                }
+
                 let cellLat = minLat + (Double(row) + 0.5) * latStep
                 let dy = (cellLat - pointLat) * GeoConversions.metersPerDegreeLat
                 let lonScale = GeoConversions.metersPerDegreeLon(at: cellLat)
