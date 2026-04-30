@@ -160,11 +160,17 @@ public struct HeatMapContours: Sendable, Equatable {
         from points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) async throws -> HeatMapContours {
+        try Task.checkCancellation()
         let points = Array(points)
         let configuration = configuration
-        return try await Task.detached {
+        let task = Task.detached {
             try computeCore(from: points, configuration: configuration)
-        }.value
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
     }
 
     // MARK: - Private
