@@ -160,11 +160,17 @@ public struct HeatMapContours: Sendable, Equatable {
         from points: [P],
         configuration: HeatMapConfiguration = HeatMapConfiguration()
     ) async throws -> HeatMapContours {
+        try Task.checkCancellation()
         let points = Array(points)
         let configuration = configuration
-        return try await Task.detached {
-            try computeCore(from: points, configuration: configuration)
-        }.value
+        let task = Task.detached {
+            try await computeCore(from: points, configuration: configuration)
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
     }
 
     // MARK: - Private
@@ -183,12 +189,7 @@ public struct HeatMapContours: Sendable, Equatable {
         let grid = try DensityGrid.compute(from: points, configuration: configuration)
 
         // 2. Resolve thresholds
-        let thresholds = configuration.levelSpacing.resolveThresholds(
-            levels: configuration.contourLevels,
-            minDensity: grid.minDensity,
-            maxDensity: grid.maxDensity,
-            densityValues: grid.values
-        )
+        let thresholds = resolveThresholds(for: grid, configuration: configuration)
 
         // 3. Contour extraction (checks between each level internally)
         let result = try MarchingSquares.extractContours(
@@ -196,8 +197,59 @@ public struct HeatMapContours: Sendable, Equatable {
             thresholds: thresholds
         )
 
+        return try finalize(
+            polygons: result,
+            thresholds: thresholds,
+            configuration: configuration
+        )
+    }
+
+    /// Async implementation used by the async compute entry point.
+    ///
+    /// The density grid is still built on the detached worker task, while
+    /// marching-squares row processing uses bounded Swift concurrency.
+    private static func computeCore<P: HeatMapable>(
+        from points: [P],
+        configuration: HeatMapConfiguration
+    ) async throws -> HeatMapContours {
+        // 1. Density grid (checks cancellation internally between points)
+        let grid = try DensityGrid.compute(from: points, configuration: configuration)
+
+        // 2. Resolve thresholds
+        let thresholds = resolveThresholds(for: grid, configuration: configuration)
+
+        // 3. Contour extraction (uses bounded child tasks for row chunks)
+        let result = try await MarchingSquares.extractContours(
+            from: grid,
+            thresholds: thresholds
+        )
+
+        return try finalize(
+            polygons: result,
+            thresholds: thresholds,
+            configuration: configuration
+        )
+    }
+
+    private static func resolveThresholds(
+        for grid: DensityGrid,
+        configuration: HeatMapConfiguration
+    ) -> [Double] {
+        configuration.levelSpacing.resolveThresholds(
+            levels: configuration.contourLevels,
+            minDensity: grid.minDensity,
+            maxDensity: grid.maxDensity,
+            densityValues: grid.values
+        )
+    }
+
+    private static func finalize(
+        polygons: [HeatMapPolygon],
+        thresholds: [Double],
+        configuration: HeatMapConfiguration
+    ) throws -> HeatMapContours {
         // 4. Smoothing (check between each polygon)
-        let smoothed = try result.map { polygon in
+        let smoothed = try polygons.map { polygon in
             try Task.checkCancellation()
             return HeatMapPolygon(
                 level: polygon.level,

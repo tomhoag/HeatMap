@@ -5,6 +5,7 @@
 //  Created by Tom Hoag on 3/19/26.
 //
 
+import CoreGraphics
 import CoreLocation
 
 /// Assembles flat contour polygons into annular (ring-shaped) polygons
@@ -49,7 +50,9 @@ enum AnnularAssembly {
         for (levelIndex, level) in sortedLevels.enumerated() {
             try Task.checkCancellation()
 
-            let outerPolygons = grouped[level]!
+            guard let outerPolygons = grouped[level] else {
+                continue
+            }
 
             guard levelIndex < sortedLevels.count - 1 else {
                 result.append(contentsOf: outerPolygons)
@@ -57,9 +60,11 @@ enum AnnularAssembly {
             }
 
             let nextLevel = sortedLevels[levelIndex + 1]
-            let innerCandidates = grouped[nextLevel]!
+            let innerCandidates = grouped[nextLevel, default: []].map(IndexedPolygon.init)
 
             for outer in outerPolygons {
+                try Task.checkCancellation()
+
                 let holes = findInteriorPolygons(
                     outer: outer,
                     candidates: innerCandidates
@@ -79,6 +84,23 @@ enum AnnularAssembly {
 
     // MARK: - Private
 
+    private struct IndexedPolygon {
+        let coordinates: [CLLocationCoordinate2D]
+        let firstVertex: CGPoint?
+
+        init(polygon: HeatMapPolygon) {
+            self.coordinates = polygon.coordinates
+            if let first = polygon.coordinates.first {
+                self.firstVertex = CGPoint(
+                    x: first.longitude,
+                    y: first.latitude
+                )
+            } else {
+                self.firstVertex = nil
+            }
+        }
+    }
+
     /// Finds which candidate polygons are spatially inside the outer
     /// polygon.
     ///
@@ -94,15 +116,40 @@ enum AnnularAssembly {
     ///   outer polygon.
     private static func findInteriorPolygons(
         outer: HeatMapPolygon,
-        candidates: [HeatMapPolygon]
+        candidates: [IndexedPolygon]
     ) -> [[CLLocationCoordinate2D]] {
         var holes: [[CLLocationCoordinate2D]] = []
+        let outerPath = makePath(from: outer.coordinates)
+        let outerBounds = outerPath.boundingBox
+
         for inner in candidates {
-            guard let firstVertex = inner.coordinates.first else { continue }
-            if outer.contains(firstVertex) {
+            guard let firstVertex = inner.firstVertex,
+                  outerBounds.contains(firstVertex) else {
+                continue
+            }
+
+            if outerPath.contains(firstVertex, using: .evenOdd) {
                 holes.append(inner.coordinates)
             }
         }
         return holes
+    }
+
+    /// Builds a Core Graphics path using longitude as x and latitude as y.
+    private static func makePath(from coordinates: [CLLocationCoordinate2D]) -> CGPath {
+        let path = CGMutablePath()
+        guard let first = coordinates.first else {
+            return path
+        }
+
+        path.move(to: CGPoint(x: first.longitude, y: first.latitude))
+        for coordinate in coordinates.dropFirst() {
+            path.addLine(to: CGPoint(
+                x: coordinate.longitude,
+                y: coordinate.latitude
+            ))
+        }
+        path.closeSubpath()
+        return path
     }
 }

@@ -42,8 +42,8 @@ import SwiftUI
 ///
 /// - ``HeatMapContours``
 public struct HeatMapLayer: MapContent {
-    /// The contour polygons to render.
-    private let contours: [HeatMapPolygon]
+    /// The MapKit polygons to render.
+    private let polygons: [RenderablePolygon]
 
     /// The gradient used to color each contour level.
     private let gradient: HeatMapGradient
@@ -67,7 +67,13 @@ public struct HeatMapLayer: MapContent {
     ///   - contours: Pre-computed contour data.
     ///   - style: The visual styling (gradient, opacity, render mode).
     public init(contours: HeatMapContours, style: HeatMapStyle) {
-        self.contours = contours.polygons
+        self.polygons = contours.polygons.map { polygon in
+            RenderablePolygon(
+                id: polygon.id,
+                level: polygon.level,
+                polygon: Self.makeMKPolygon(from: polygon)
+            )
+        }
         self.gradient = style.gradient
         self.totalLevels = contours.levels
         self.fillOpacity = style.fillOpacity
@@ -86,11 +92,17 @@ public struct HeatMapLayer: MapContent {
 
     @MainActor
     public var body: some MapContent {
-        ForEach(contours) { polygon in
-            MapPolygon(Self.makeMKPolygon(from: polygon))
+        ForEach(polygons) { polygon in
+            MapPolygon(polygon.polygon)
                 .foregroundStyle(polygonFillColor(for: polygon.level))
                 .stroke(polygonStrokeColor(for: polygon.level), lineWidth: polygonStrokeLineWidth)
         }
+    }
+
+    private struct RenderablePolygon: Identifiable {
+        let id: UUID
+        let level: Int
+        let polygon: MKPolygon
     }
 
     // MARK: - Color Helpers
